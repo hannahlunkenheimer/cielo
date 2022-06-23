@@ -1,2 +1,2 @@
 # cielo
-Woolley Lab Cielo project repo
+Woolley Lab Cielo Project repo
