@@ -1,2 +1,2 @@
 # cielo
-Woolley Lab Cielo Project repo
+Woolley Lab's first repo woohoo! Cielo Project
