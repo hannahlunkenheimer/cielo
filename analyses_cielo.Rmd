@@ -7,20 +7,21 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+
+# set working directory
 knitr::opts_knit$set(root.dir = '/Documents/Github/cielo')
 ```
 
 ```{r importing the data}
-# set working directory
-
-getwd()
+# loading packages
+library(readr)
 
 # importing the data
 d_all <- read_csv("data/mergeddatafull.csv")
 
-# loading packages
-library(readr)
-  
+# now let's view our data
+
+View(d_all)
 ```
 
 ## Predictions and analyses in preregistration (and more)
