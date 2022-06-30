@@ -26,7 +26,9 @@ knitr::opts_chunk$set(echo = TRUE)
 
 Next, depending where we're at in the process, we can use the remaining chunks in the file for data cleaning or analysis. If our data needs cleaning, we can do that here! Once we've finished our data cleaning, we can export the data as a new file in our R Project and call the cleaned data from another RMD file. 
 
-```{r analysis}
+RQ?
+
+```{r cielo child interview reg1}
 # here is where we will load our data set
 
 # is the data cleaned or do we need to do the cleaning?
@@ -35,9 +37,23 @@ Next, depending where we're at in the process, we can use the remaining chunks i
 
 ```
 
+```{r cielo child interview reg1}
+# here is where we will load our data set
+
+# is the data cleaned or do we need to do the cleaning?
+
+# here is where we would recode any variables, fix mistakes, rename columns, etc
+
+#practice push
+```
 Adding #, ##, ###, #### etc in front of the text in the writing sections of the RMD file, it adds headings. 1 # is Heading 1, ## is heading 2, etc. When we knit the file, these headings will make it nice for our reader to follow what's going on in the script/process/plots/whatever! 
 
 Also note, when we add our headers to the RMD file, there is an "Outline" column that is formed from your headers, making it easier to toggle between your files. 
+
+```{r paola jenny jacqui}
+
+
+```
 
 ## Some things to remember
 - Googling your errors is 90% of trouble-shooting
