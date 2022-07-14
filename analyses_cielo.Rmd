@@ -33,11 +33,7 @@ library(readr)
 
 ```
 
-
-
 ## PB remove text practice
-
-
 
 ```{r importing the data}
 # importing the data
@@ -51,6 +47,7 @@ d_all[-c(7, 30, 48, 119), ]
 
 # great, we've removed our 4 participants completely from our dataframe d_all and now have all of the participants we can use for analyses
 
+View(d_all)
 ```
 
 ```{r selecting practice items}
@@ -89,6 +86,12 @@ dog_plot
 
 # we can then reorder the groups to follow our likert scale
 
+swim_plot <- ggplot(d_practice, aes(practice_swim)) +
+  geom_bar(fill='purple') + 
+  labs(x='Scale', y="Participants", title ="Practice Question - Swim") + 
+  theme_light()
+
+swim_plot
 ```
 
 ## Predictions and analyses in preregistration (and more)
