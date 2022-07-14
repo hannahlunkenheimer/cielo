@@ -33,6 +33,12 @@ library(readr)
 
 ```
 
+## JW remove text practice
+
+## PB remove text practice
+
+## JN remove text practice
+
 ```{r importing the data}
 # importing the data
 d_all <- read_csv("data/Cielo1_MergedFull_practice.csv")
