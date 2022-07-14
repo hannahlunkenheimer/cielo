@@ -10,18 +10,79 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # set working directory
 knitr::opts_knit$set(root.dir = '/Documents/Github/cielo')
+
+# Libraries 
+library(tidyverse)
+library(here)
+library(psych)
+library(nFactors)
+library(lme4)
+library(nlme)
+library(FactoMineR)
+library(sem)
+library(ggplot2)
+library(dplyr)
+library(lavaan) # for factor analysis 
+library(performance) # for model performance
+library(texreg)
+library(sjPlot)
+library(sjmisc)
+library(sjlabelled)
+library(lattice)
+library(readr)
+
 ```
 
 ```{r importing the data}
-# loading packages
-library(readr)
-
 # importing the data
-d_all <- read_csv("data/mergeddatafull.csv")
+d_all <- read_csv("data/Cielo1_MergedFull_practice.csv")
 
 # now let's view our data
-
 View(d_all)
+
+# some participant data needs to be thrown out completely according to the red rows in our CSV file, so let's remove those participants completely here (ID 129, 152, 175, and 277)
+d_all[-c(7, 30, 48, 119), ]
+
+# great, we've removed our 4 participants completely from our dataframe d_all and now have all of the participants we can use for analyses
+
+```
+
+```{r selecting practice items}
+
+# here, we're creating a new dataframe for a subset of our data that we want to look at (the practice questions)
+d_practice <- d_all %>% dplyr::select(practice_dogs, practice_veg, practice_swim)
+
+# now let's view the subset of our full data set (we see a total of 151 participants)
+View(d_practice)
+
+# we notice some NA's, so let's remove them using the na.omit() function 
+d_practice <- na.omit(d_practice) 
+
+# when we view our data again the responses with NAs should be removed now (now we see 148 participants)
+View(d_practice)
+
+```
+
+```{r descriptives practice items}
+
+# let's look at the means, SDs, min and max for our d_practice dataframe
+describe(d_practice)
+
+#when we want to get a general idea of the responses from the dataframe, we can use the head() function for a quick look (the tibble() fuction also works for this)
+head(d_practice)
+
+# let's plot the descriptive statistics with a figure using the ggplot package in our library
+dog_plot <- ggplot(d_practice, aes(practice_dogs)) +
+  geom_bar(fill='light blue') +
+  labs(x='Scale', y="Participants", title ="Practice Question - Dogs") +
+  theme_light()
+
+dog_plot
+
+# nice!
+
+# we can then reorder the groups to follow our likert scale
+
 ```
 
 ## Predictions and analyses in preregistration (and more)
@@ -53,6 +114,49 @@ ii.	Effects of age (and religiosity*) (and control) on interventionist concepts 
 
 iii.	Effects of age, etc on “intervention frequency task” (Does God make..?). Would just sum number of yes responses as dv.
 1.	Linear regression (+histogram of each question. Factor analysis to determine clusters)
+
+```{r age intervention task fa}
+# here is some of my old code on doing factor analysis
+
+# we're selecting our subset of data and calling it to a new dataframe
+d_practice_fa <- d_all %>% select(contains("practice_")) 
+
+# if any recoding needs to be done, it can look like this
+d_all1$PO5_abortion <- recode(d_all1$PO5_abortion, '1' = 7, '2'=6, '3'=5, '4'=4, '5'=3, '6'=2, '7'=1)
+d_all1$PO6_sex <- recode(d_all1$PO6_sex, '1' = 7, '2'=6, '3'=5, '4'=4, '5'=3, '6'=2, '7'=1)
+
+# Extract number of factors
+ev <- eigen(cor(d_all1)) # get eigenvalues
+ap <- parallel(subject=nrow(d_all1),var=ncol(d_all1),              rep=100,cent=.05)
+nS <- nScree(x=ev$values, aparallel=ap$eigen$qevpea)
+plotnScree(nS)
+
+## Exploratory Factor analysis, testing with 3 factors and 2 factors to start, using varimax rotation for all
+fact3 <- factanal(d_all1, 3, rotation="varimax") 
+print(fact, digits=2, cutoff=.3, sort=TRUE)
+
+fact2 <- factanal(d_all1, 2, rotation="varimax") 
+print(fact, digits=2, cutoff=.3, sort=TRUE)
+
+# this is to see if 1 factor is fine, which we'd then do a principal components analysis if this was the best loading
+#fact <- factanal(d_all, 1, rotation="varimax") # show improvement 5, 4, 3
+#print(fact, digits=2, cutoff=.3, sort=TRUE)
+
+# Reduce factors- we do this to see if taking out items makes the loadings more clear. regardless of the outcome we find, it's up to our discretion as researchers on whether or not to omit certain items from a set of questions based on rationale
+# d_all <- d_all %>% select(- Epistemic_4) %>% select(- Epistemic_6) # Why? 
+# fact <- factanal(d_all, 3, rotation="varimax")
+# print(fact, digits=2, cutoff=.3, sort=TRUE) # Optimal model w/3 factors 
+
+# here we're plotting our factors (3 and 2) to visually see where the items are loading
+load <- fact3$loadings[,1:3]
+plot(load,type="n") # set up plot
+text(load,labels=names(d_all1),cex=.7) # add variable names
+
+load <- fact2$loadings[,1:2]
+plot(load,type="n") # set up plot
+text(load,labels=names(d_all1),cex=.7) # add variable names
+
+```
 
 ```{r age intervention task reg}
 
