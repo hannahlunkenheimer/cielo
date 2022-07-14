@@ -37,7 +37,7 @@ library(readr)
 
 ## PB remove text practice
 
-## JN remove text practice
+
 
 ```{r importing the data}
 # importing the data
