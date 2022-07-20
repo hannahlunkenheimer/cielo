@@ -52,13 +52,7 @@ subset(d_all, id_num != "129" & id_num != "152" & id_num != "175" & id_num != "2
 # here, we're creating a new dataframe for a subset of our data that we want to look at (the practice questions)
 d_practice <- d_all %>% dplyr::select(practice_dogs, practice_veg, practice_swim)
 
-# now let's view the subset of our full data set (we see a total of 151 participants)
-View(d_practice)
-
-# we notice some NA's, so let's remove them using the na.omit() function 
-d_practice <- na.omit(d_practice) 
-
-# when we view our data again the responses with NAs should be removed now (now we see 148 participants)
+# now let's view the subset of our full data set
 View(d_practice)
 
 ```
@@ -72,6 +66,7 @@ describe(d_practice)
 head(d_practice)
 
 # here, we're telling R which order we want the responses to be in (levels) so that our figure matches our scale. you can specify any order you want here by using ""s and what the responses are exactly. for example, if we had written "really disagree", R would not have ordered that response bc of the capitalization sensitivity
+
 d_practice$practice_dogs = factor(d_practice$practice_dogs, levels=c("Really Disagree", "Disagree", "Kind of Disagree", "Kind of Agree", "Agree", "Really Agree"))
 
 # let's plot the descriptive statistics with a figure using the ggplot package in our library
@@ -103,19 +98,87 @@ swim_plot
 
 # try making your own descriptive figures from any of the variables we have access to in our cielo data. if you're having trouble remembering what the column names are, use the View() function 
 ```
-```{r more descriptive stuff}
 
-# here, we're creating a new dataframe for a subset of our data that we want to look at (the practice questions)
-d_practice <- d_all %>% dplyr::select(practice_dogs, practice_veg, practice_swim)
+```{r more descriptive stuff exists}
 
-# now let's view the subset of our full data set (we see a total of 151 participants)
-View(d_practice)
+# here, we're creating a new dataframe for a subset of our data that we want to look at (the exist questions)
+d_exist <- dplyr::select(d_all, exist_germs, exist_tooth, exist_vitamins, exist_merm, exist_elf, exist_fairy,
+                         exist_soul, exist_god, exist_santa, exist_elf, contains("id_num"))
 
-# we notice some NA's, so let's remove them using the na.omit() function 
-d_practice <- na.omit(d_practice) 
+#viewing our new dataframe with our exist questions subset of data
+View(d_exist)
 
-# when we view our data again the responses with NAs should be removed now (now we see 148 participants)
-View(d_practice)
+existgerms_plot <- ggplot(d_exist, aes(exist_germs)) +
+  geom_bar(fill='light blue') +
+  labs(x='Scale', y="Participants", title ="Are germs real?") +
+  theme_light()
+
+existvit_plot <- ggplot(d_exist, aes(exist_vitamins)) +
+  geom_bar(fill='light blue') +
+  labs(x='Scale', y="Participants", title ="Are vitamins real?") +
+  theme_light()
+
+existmerm_plot <- ggplot(d_exist, aes(exist_merm)) +
+  geom_bar(fill='light blue') +
+  labs(x='Scale', y="Participants", title ="Are mermaids real?") +
+  theme_light()
+
+existelf_plot <- ggplot(d_exist, aes(exist_elf)) +
+  geom_bar(fill='light blue') +
+  labs(x='Scale', y="Participants", title ="Are elves real?") +
+  theme_light()
+
+existfairy_plot <- ggplot(d_exist, aes(exist_fairy)) +
+  geom_bar(fill='light blue') +
+  labs(x='Scale', y="Participants", title ="Are fairies real?") +
+  theme_light()
+
+existsoul_plot <- ggplot(d_exist, aes(exist_soul)) +
+  geom_bar(fill='light blue') +
+  labs(x='Scale', y="Participants", title ="Are sould real?") +
+  theme_light()
+
+existgod_plot <- ggplot(d_exist, aes(exist_god)) +
+  geom_bar(fill='light blue') +
+  labs(x='Scale', y="Participants", title ="Is God real?") +
+  theme_light()
+
+existsanta_plot <- ggplot(d_exist, aes(exist_santa)) +
+  geom_bar(fill='light blue') +
+  labs(x='Scale', y="Participants", title ="Is Santa real?") +
+  theme_light()
+
+existtooth_plot <- ggplot(d_exist, aes(exist_tooth)) +
+  geom_bar(fill='light blue') +
+  labs(x='Scale', y="Participants", title ="Is the tooth fairy real?") +
+  theme_light()
+
+# calling our figures
+existgerms_plot
+existvit_plot
+existmerm_plot
+existelf_plot
+existfairy_plot
+existsoul_plot
+existgod_plot 
+existsanta_plot
+existtooth_plot
+
+# let's convert our data to tall format so we can include all of the same plots on the same figure
+library(reshape2)
+d_exist <- melt(d_exist, id.vars="id_num")
+
+#let's view our tall data now
+View(d_exist)
+
+ggplot(d_exist,                                      # Grouped plot using ggplot2
+       aes(x = variable,
+           y = value,
+           color = variable)) +
+  geom_count(stat = "identity", position = "identity", size = 1) +
+  geom_jitter(size=.8, width = .4)+
+  theme_light()
+
 ```
 
 ## Predictions and analyses in preregistration (and more)
