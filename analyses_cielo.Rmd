@@ -43,11 +43,8 @@ d_all <- read_csv("data/Cielo1_MergedFull_practice.csv")
 View(d_all)
 
 # some participant data needs to be thrown out completely according to the red rows in our CSV file, so let's remove those participants completely here (ID 129, 152, 175, and 277)
-d_all[-c(7, 30, 48, 119), ]
-
+subset(d_all, id_num != "129" & id_num != "152" & id_num != "175" & id_num != "277")
 # great, we've removed our 4 participants completely from our dataframe d_all and now have all of the participants we can use for analyses
-
-View(d_all)
 ```
 
 ```{r selecting practice items}
@@ -74,24 +71,51 @@ describe(d_practice)
 #when we want to get a general idea of the responses from the dataframe, we can use the head() function for a quick look (the tibble() fuction also works for this)
 head(d_practice)
 
+# here, we're telling R which order we want the responses to be in (levels) so that our figure matches our scale. you can specify any order you want here by using ""s and what the responses are exactly. for example, if we had written "really disagree", R would not have ordered that response bc of the capitalization sensitivity
+d_practice$practice_dogs = factor(d_practice$practice_dogs, levels=c("Really Disagree", "Disagree", "Kind of Disagree", "Kind of Agree", "Agree", "Really Agree"))
+
 # let's plot the descriptive statistics with a figure using the ggplot package in our library
 dog_plot <- ggplot(d_practice, aes(practice_dogs)) +
   geom_bar(fill='light blue') +
   labs(x='Scale', y="Participants", title ="Practice Question - Dogs") +
   theme_light()
 
+# calling our figure
 dog_plot
 
 # nice!
 
-# we can then reorder the groups to follow our likert scale
+#reordering the levels of the swim practice question
+d_practice$practice_swim = factor(d_practice$practice_swim, levels=c("Really Disagree", "Disagree", "Kind of Disagree", "Kind of Agree", "Agree", "Really Agree"))
 
+# making our ggplot
 swim_plot <- ggplot(d_practice, aes(practice_swim)) +
   geom_bar(fill='purple') + 
   labs(x='Scale', y="Participants", title ="Practice Question - Swim") + 
   theme_light()
 
+# calling our figure
 swim_plot
+
+################################
+### IF YOU WANT TO PRACTICE! ###
+################################
+
+# try making your own descriptive figures from any of the variables we have access to in our cielo data. if you're having trouble remembering what the column names are, use the View() function 
+```
+```{r more descriptive stuff}
+
+# here, we're creating a new dataframe for a subset of our data that we want to look at (the practice questions)
+d_practice <- d_all %>% dplyr::select(practice_dogs, practice_veg, practice_swim)
+
+# now let's view the subset of our full data set (we see a total of 151 participants)
+View(d_practice)
+
+# we notice some NA's, so let's remove them using the na.omit() function 
+d_practice <- na.omit(d_practice) 
+
+# when we view our data again the responses with NAs should be removed now (now we see 148 participants)
+View(d_practice)
 ```
 
 ## Predictions and analyses in preregistration (and more)
