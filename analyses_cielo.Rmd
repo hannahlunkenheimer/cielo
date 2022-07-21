@@ -172,11 +172,11 @@ d_exist <- melt(d_exist, id.vars="id_num")
 View(d_exist)
 
 ggplot(d_exist,                                      # Grouped plot using ggplot2
-       aes(x = variable,
-           y = value,
+       aes(x = value,
+           y = variable,
            color = variable)) +
-  geom_count(stat = "identity", position = "identity", size = 1) +
-  geom_jitter(size=.8, width = .4)+
+  geom_count(stat = "identity", position = "identity") +
+  geom_jitter(size=.4, width = .3) +
   theme_light()
 
 ```
@@ -196,6 +196,10 @@ i.	Effects of age (and religiosity*) (and control**) on interventionist concepts
 a.	Model with all 3 above (age, relig, control) + interactions = best fit model. Put all 3 parent variables into the model and take out if not predictive. Test for multicollinearity. If yes, then Principal Components Analysis.
 
 ```{r age intervention child choice reg}
+#downloading libraries for multinomial reg
+library(foreign)
+library(nnet)
+
 
 
 ```
