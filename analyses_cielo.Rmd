@@ -172,14 +172,34 @@ d_exist <- melt(d_exist, id.vars="id_num")
 View(d_exist)
 
 ggplot(d_exist,                                      # Grouped plot using ggplot2
-       aes(x = value,
-           y = variable,
-           color = variable)) +
+  aes(x = value, y = variable, color = variable)) +
   geom_count(stat = "identity", position = "identity") +
   geom_jitter(size=.4, width = .3) +
   theme_light()
 
+# hL will add a bar graph with these counts here bc don't like the previous figure ^
+
 ```
+```{r exist bar figure}
+# need to create a sum of counts? by piping
+
+#1. next to each other
+p1<-ggplot(d_exist,aes(x=factor(variable),y=count,fill=factor(value)), color=factor(value)) +
+  stat_summary(fun.y=mean,position=position_dodge(),geom="bar")
+p1
+
+#2. stacked
+p2<-ggplot(mtc,aes(x=factor(gear),y=wt,fill=factor(vs)), color=factor(vs)) +  
+  stat_summary(fun.y=mean,position="stack",geom="bar")
+
+#3. with facets
+p3<-ggplot(mtc,aes(x=factor(gear),y=wt,fill=factor(vs)), color=factor(vs)) +  
+  stat_summary(fun.y=mean, geom="bar") +
+  facet_wrap(~vs)
+
+grid.arrange(p1, p2, p3, nrow=1)
+```
+
 
 ## Predictions and analyses in preregistration (and more)
 
