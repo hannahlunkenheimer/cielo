@@ -181,7 +181,7 @@ ggplot(d_exist,                                      # Grouped plot using ggplot
 
 ```
 ```{r exist bar figure}
-# need to create a sum of counts? by piping
+# need to create a sum of counts? by piping check prev code
 
 #1. next to each other
 p1<-ggplot(d_exist,aes(x=factor(variable),y=count,fill=factor(value)), color=factor(value)) +
@@ -198,6 +198,7 @@ p3<-ggplot(mtc,aes(x=factor(gear),y=wt,fill=factor(vs)), color=factor(vs)) +
   facet_wrap(~vs)
 
 grid.arrange(p1, p2, p3, nrow=1)
+
 ```
 
 
