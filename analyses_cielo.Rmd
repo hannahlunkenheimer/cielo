@@ -40,7 +40,7 @@ library(readr)
 d_all <- read_csv("data/Cielo1_MergedFull_practice.csv")
 
 # now let's view our data
-View(d_all)
+#View(d_all)
 
 # some participant data needs to be thrown out completely according to the red rows in our CSV file, so let's remove those participants completely here (ID 129, 152, 175, and 277)
 subset(d_all, id_num != "129" & id_num != "152" & id_num != "175" & id_num != "277")
@@ -99,12 +99,17 @@ swim_plot
 # try making your own descriptive figures from any of the variables we have access to in our cielo data. if you're having trouble remembering what the column names are, use the View() function 
 ```
 
-```{r more descriptive stuff exists}
+```{r exist forming subset data}
 
 # here, we're creating a new dataframe for a subset of our data that we want to look at (the exist questions)
-d_exist <- dplyr::select(d_all, exist_germs, exist_tooth, exist_vitamins, exist_merm, exist_elf, exist_fairy,
+d_exist <- dplyr::select(d_all, gender, exist_germs, exist_tooth, exist_vitamins, exist_merm, exist_elf, exist_fairy,
                          exist_soul, exist_god, exist_santa, exist_elf, contains("id_num"))
 
+d_exist<-subset(d_exist, gender!="Other")
+
+```
+
+```{r exist descriptives by item}
 #viewing our new dataframe with our exist questions subset of data
 View(d_exist)
 
@@ -164,41 +169,93 @@ existgod_plot
 existsanta_plot
 existtooth_plot
 
-# let's convert our data to tall format so we can include all of the same plots on the same figure
-library(reshape2)
-d_exist <- melt(d_exist, id.vars="id_num")
 
-#let's view our tall data now
-View(d_exist)
-
-ggplot(d_exist,                                      # Grouped plot using ggplot2
-  aes(x = value, y = variable, color = variable)) +
-  geom_count(stat = "identity", position = "identity") +
-  geom_jitter(size=.4, width = .3) +
-  theme_light()
-
+#ggplot(d_exist,                                      # Grouped plot using ggplot2
+#  aes(x = value, y = variable, color = variable)) +
+#  geom_count(stat = "identity", position = "identity") +
+#  geom_jitter(size=.4, width = .3) +
+#  theme_light()
+#
 # hL will add a bar graph with these counts here bc don't like the previous figure ^
 
 ```
-```{r exist bar figure}
-# need to create a sum of counts? by piping check prev code
 
-#1. next to each other
-p1<-ggplot(d_exist,aes(x=factor(variable),y=count,fill=factor(value)), color=factor(value)) +
-  stat_summary(fun.y=mean,position=position_dodge(),geom="bar")
-p1
+```{r exist x gender bar figure}
+# let's convert our data to tall format so we can include all of the same plots on the same figure
+library(reshape2)
+d_exist <- melt(d_exist, id.vars= c("id_num", "gender"))
 
-#2. stacked
-p2<-ggplot(mtc,aes(x=factor(gear),y=wt,fill=factor(vs)), color=factor(vs)) +  
-  stat_summary(fun.y=mean,position="stack",geom="bar")
+#let's view our tall data now
+#View(d_exist)
 
-#3. with facets
-p3<-ggplot(mtc,aes(x=factor(gear),y=wt,fill=factor(vs)), color=factor(vs)) +  
-  stat_summary(fun.y=mean, geom="bar") +
-  facet_wrap(~vs)
+# here, i'm making a dataframe with frequency counts added in
+d_exist_counts <- table(d_exist$value, d_exist$variable, d_exist$gender)
+addmargins(d_exist_counts)
+round(prop.table(d_exist_counts,2)*100,digits=0)
+df_ec <- as.data.frame(d_exist_counts)
 
-grid.arrange(p1, p2, p3, nrow=1)
+# creating our ggplot for all exist questions including both genders together. i'm labeling it p_exist becaues we're making a plot for the exist questions
+p_exist <- ggplot(data = df_ec, aes(x = Var2, y = Freq, fill = Var1)) +
+       geom_bar(stat = "identity", width = .5) +
+      geom_text(aes(label = Freq), position = position_stack(vjust = 0.5), color="black", size=3) +
+      theme_classic() +
+      labs(title="Children's responses to real or pretend questions", x ="Item", y = "Counts", fill = "Response") +
+      theme(axis.text.x = element_text(angle=20))
 
+# fixing the x axis labels
+p_exist <- p_exist + scale_x_discrete(labels=c("exist_germs" = "Germs", "exist_tooth" = "Tooth \n Fairy", "exist_vitamins" = "Vitamins", "exist_merm" = "Mermaids", "exist_elf" = "Elves", "exist_fairy" = "Fairies", "exist_soul" = "Souls", "exist_god" = "God", "exist_santa" = "Santa"))
+
+# faceting by gender
+p_exist <- p_exist + facet_wrap(~Var3, ncol = 1) +
+    theme(panel.spacing = unit(1, "lines"))
+
+p_exist
+
+```
+
+```{r exist x age bar figure}
+# here, we're creating a new dataframe for a subset of our data that we want to look at (the exist questions)
+d_exist2 <- dplyr::select(d_all, age, exist_germs, exist_tooth, exist_vitamins, exist_merm, exist_elf, exist_fairy,
+                         exist_soul, exist_god, exist_santa, exist_elf, contains("id_num"))
+
+#d_exist<-subset(d_exist, gender!="Other")
+
+# let's convert our data to tall format so we can include all of the same plots on the same figure
+library(reshape2)
+d_exist2 <- melt(d_exist2, id.vars= c("id_num", "age"))
+
+#let's view our tall data now
+#View(d_exist2)
+
+# here, i'm making a dataframe with frequency counts added in
+d_exist_counts2 <- table(d_exist2$value, d_exist2$variable, d_exist2$age)
+#d_exist_counts2 <- addmargins(d_exist_counts2)
+#d_exist_counts2 <- round(prop.table(d_exist_counts2,2)*100,digits=0)
+
+df_ec2 <- as.data.frame(d_exist_counts2)
+
+#df_ec2 <- subset(df_ec2, Var1!="Sum" && Var2!="Sum" && Var3!="Sum")
+#df_ec2 <- subset(df_ec2, Var3!="Sum")
+
+# creating our ggplot for all exist questions including both genders together. i'm labeling it p_exist becaues we're making a plot for the exist questions
+p_exist2 <- ggplot(data = df_ec2, aes(x = Var2, y = Freq, fill = Var3)) +
+       geom_bar(stat = "identity", width = .9) +
+        geom_text(aes(label = Freq), position = position_stack(vjust = 0.5), color="black", size=2) +
+      theme_classic() +
+      labs(title="Children's responses to real or pretend questions", x ="Item", y = "Counts", fill = "Age") +
+      theme(axis.text.x = element_text(angle=20))
+
+# fixing the x axis labels
+p_exist2 <- p_exist2 + scale_x_discrete(labels=c("exist_germs" = "Germs", "exist_tooth" = "Tooth \n Fairy", "exist_vitamins" = "Vitamins", "exist_merm" = "Mermaids", "exist_elf" = "Elves", "exist_fairy" = "Fairies", "exist_soul" = "Souls", "exist_god" = "God", "exist_santa" = "Santa"))
+
+# faceting by age
+p_exist2 <- p_exist2 + facet_wrap(~Var1, nrow=2) +
+    theme(panel.spacing = unit(1, "lines"))
+
+p_exist2
+
+##############################################3
+## HL try and stretch the facets (length) so the numbers are more clear & nice looking
 ```
 
 
