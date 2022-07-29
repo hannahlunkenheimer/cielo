@@ -1,0 +1,56 @@
+---
+title: "Intervention Freq Factor Analysis"
+author: "Hannah Lunkenheimer"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+iii.	Effects of age, etc on “intervention frequency task” (Does God make..?). Would just sum number of yes responses as dv.
+1.	Linear regression (+histogram of each question. Factor analysis to determine clusters)
+
+```{r age intervention task fa}
+# here is some of my old code on doing factor analysis
+
+# we're selecting our subset of data and calling it to a new dataframe
+d_practice_fa <- d_all %>% select(contains("practice_")) 
+
+# if any recoding needs to be done, it can look like this
+d_all1$PO5_abortion <- recode(d_all1$PO5_abortion, '1' = 7, '2'=6, '3'=5, '4'=4, '5'=3, '6'=2, '7'=1)
+d_all1$PO6_sex <- recode(d_all1$PO6_sex, '1' = 7, '2'=6, '3'=5, '4'=4, '5'=3, '6'=2, '7'=1)
+
+# Extract number of factors
+ev <- eigen(cor(d_all1)) # get eigenvalues
+ap <- parallel(subject=nrow(d_all1),var=ncol(d_all1),              rep=100,cent=.05)
+nS <- nScree(x=ev$values, aparallel=ap$eigen$qevpea)
+plotnScree(nS)
+
+## Exploratory Factor analysis, testing with 3 factors and 2 factors to start, using varimax rotation for all
+fact3 <- factanal(d_all1, 3, rotation="varimax") 
+print(fact, digits=2, cutoff=.3, sort=TRUE)
+
+fact2 <- factanal(d_all1, 2, rotation="varimax") 
+print(fact, digits=2, cutoff=.3, sort=TRUE)
+
+# this is to see if 1 factor is fine, which we'd then do a principal components analysis if this was the best loading
+#fact <- factanal(d_all, 1, rotation="varimax") # show improvement 5, 4, 3
+#print(fact, digits=2, cutoff=.3, sort=TRUE)
+
+# Reduce factors- we do this to see if taking out items makes the loadings more clear. regardless of the outcome we find, it's up to our discretion as researchers on whether or not to omit certain items from a set of questions based on rationale
+# d_all <- d_all %>% select(- Epistemic_4) %>% select(- Epistemic_6) # Why? 
+# fact <- factanal(d_all, 3, rotation="varimax")
+# print(fact, digits=2, cutoff=.3, sort=TRUE) # Optimal model w/3 factors 
+
+# here we're plotting our factors (3 and 2) to visually see where the items are loading
+load <- fact3$loadings[,1:3]
+plot(load,type="n") # set up plot
+text(load,labels=names(d_all1),cex=.7) # add variable names
+
+load <- fact2$loadings[,1:2]
+plot(load,type="n") # set up plot
+text(load,labels=names(d_all1),cex=.7) # add variable names
+
+```

@@ -5,6 +5,9 @@ date: "`r Sys.Date()`"
 output: html_document
 ---
 
+# Cielo Analyses Checklist
+
+This document serves as a reference for the analyses we want to do for Cielo. Each will have a 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
@@ -99,165 +102,6 @@ swim_plot
 # try making your own descriptive figures from any of the variables we have access to in our cielo data. if you're having trouble remembering what the column names are, use the View() function 
 ```
 
-```{r exist forming subset data}
-
-# here, we're creating a new dataframe for a subset of our data that we want to look at (the exist questions)
-d_exist <- dplyr::select(d_all, gender, exist_germs, exist_tooth, exist_vitamins, exist_merm, exist_elf, exist_fairy,
-                         exist_soul, exist_god, exist_santa, exist_elf, contains("id_num"))
-
-d_exist<-subset(d_exist, gender!="Other")
-
-```
-
-```{r exist descriptives by item}
-#viewing our new dataframe with our exist questions subset of data
-View(d_exist)
-
-existgerms_plot <- ggplot(d_exist, aes(exist_germs)) +
-  geom_bar(fill='light blue') +
-  labs(x='Scale', y="Participants", title ="Are germs real?") +
-  theme_light()
-
-existvit_plot <- ggplot(d_exist, aes(exist_vitamins)) +
-  geom_bar(fill='light blue') +
-  labs(x='Scale', y="Participants", title ="Are vitamins real?") +
-  theme_light()
-
-existmerm_plot <- ggplot(d_exist, aes(exist_merm)) +
-  geom_bar(fill='light blue') +
-  labs(x='Scale', y="Participants", title ="Are mermaids real?") +
-  theme_light()
-
-existelf_plot <- ggplot(d_exist, aes(exist_elf)) +
-  geom_bar(fill='light blue') +
-  labs(x='Scale', y="Participants", title ="Are elves real?") +
-  theme_light()
-
-existfairy_plot <- ggplot(d_exist, aes(exist_fairy)) +
-  geom_bar(fill='light blue') +
-  labs(x='Scale', y="Participants", title ="Are fairies real?") +
-  theme_light()
-
-existsoul_plot <- ggplot(d_exist, aes(exist_soul)) +
-  geom_bar(fill='light blue') +
-  labs(x='Scale', y="Participants", title ="Are sould real?") +
-  theme_light()
-
-existgod_plot <- ggplot(d_exist, aes(exist_god)) +
-  geom_bar(fill='light blue') +
-  labs(x='Scale', y="Participants", title ="Is God real?") +
-  theme_light()
-
-existsanta_plot <- ggplot(d_exist, aes(exist_santa)) +
-  geom_bar(fill='light blue') +
-  labs(x='Scale', y="Participants", title ="Is Santa real?") +
-  theme_light()
-
-existtooth_plot <- ggplot(d_exist, aes(exist_tooth)) +
-  geom_bar(fill='light blue') +
-  labs(x='Scale', y="Participants", title ="Is the tooth fairy real?") +
-  theme_light()
-
-# calling our figures
-existgerms_plot
-existvit_plot
-existmerm_plot
-existelf_plot
-existfairy_plot
-existsoul_plot
-existgod_plot 
-existsanta_plot
-existtooth_plot
-
-
-#ggplot(d_exist,                                      # Grouped plot using ggplot2
-#  aes(x = value, y = variable, color = variable)) +
-#  geom_count(stat = "identity", position = "identity") +
-#  geom_jitter(size=.4, width = .3) +
-#  theme_light()
-#
-# hL will add a bar graph with these counts here bc don't like the previous figure ^
-
-```
-
-```{r exist x gender bar figure}
-# let's convert our data to tall format so we can include all of the same plots on the same figure
-library(reshape2)
-d_exist <- melt(d_exist, id.vars= c("id_num", "gender"))
-
-#let's view our tall data now
-#View(d_exist)
-
-# here, i'm making a dataframe with frequency counts added in
-d_exist_counts <- table(d_exist$value, d_exist$variable, d_exist$gender)
-addmargins(d_exist_counts)
-round(prop.table(d_exist_counts,2)*100,digits=0)
-df_ec <- as.data.frame(d_exist_counts)
-
-# creating our ggplot for all exist questions including both genders together. i'm labeling it p_exist becaues we're making a plot for the exist questions
-p_exist <- ggplot(data = df_ec, aes(x = Var2, y = Freq, fill = Var1)) +
-       geom_bar(stat = "identity", width = .5) +
-      geom_text(aes(label = Freq), position = position_stack(vjust = 0.5), color="black", size=3) +
-      theme_classic() +
-      labs(title="Children's responses to real or pretend questions", x ="Item", y = "Counts", fill = "Response") +
-      theme(axis.text.x = element_text(angle=20))
-
-# fixing the x axis labels
-p_exist <- p_exist + scale_x_discrete(labels=c("exist_germs" = "Germs", "exist_tooth" = "Tooth \n Fairy", "exist_vitamins" = "Vitamins", "exist_merm" = "Mermaids", "exist_elf" = "Elves", "exist_fairy" = "Fairies", "exist_soul" = "Souls", "exist_god" = "God", "exist_santa" = "Santa"))
-
-# faceting by gender
-p_exist <- p_exist + facet_wrap(~Var3, ncol = 1) +
-    theme(panel.spacing = unit(1, "lines"))
-
-p_exist
-
-```
-
-```{r exist x age bar figure}
-# here, we're creating a new dataframe for a subset of our data that we want to look at (the exist questions)
-d_exist2 <- dplyr::select(d_all, age, exist_germs, exist_tooth, exist_vitamins, exist_merm, exist_elf, exist_fairy,
-                         exist_soul, exist_god, exist_santa, exist_elf, contains("id_num"))
-
-#d_exist<-subset(d_exist, gender!="Other")
-
-# let's convert our data to tall format so we can include all of the same plots on the same figure
-library(reshape2)
-d_exist2 <- melt(d_exist2, id.vars= c("id_num", "age"))
-
-#let's view our tall data now
-#View(d_exist2)
-
-# here, i'm making a dataframe with frequency counts added in
-d_exist_counts2 <- table(d_exist2$value, d_exist2$variable, d_exist2$age)
-#d_exist_counts2 <- addmargins(d_exist_counts2)
-#d_exist_counts2 <- round(prop.table(d_exist_counts2,2)*100,digits=0)
-
-df_ec2 <- as.data.frame(d_exist_counts2)
-
-#df_ec2 <- subset(df_ec2, Var1!="Sum" && Var2!="Sum" && Var3!="Sum")
-#df_ec2 <- subset(df_ec2, Var3!="Sum")
-
-# creating our ggplot for all exist questions including both genders together. i'm labeling it p_exist becaues we're making a plot for the exist questions
-p_exist2 <- ggplot(data = df_ec2, aes(x = Var2, y = Freq, fill = Var3)) +
-       geom_bar(stat = "identity", width = .9) +
-        geom_text(aes(label = Freq), position = position_stack(vjust = 0.5), color="black", size=2) +
-      theme_classic() +
-      labs(title="Children's responses to real or pretend questions", x ="Item", y = "Counts", fill = "Age") +
-      theme(axis.text.x = element_text(angle=20))
-
-# fixing the x axis labels
-p_exist2 <- p_exist2 + scale_x_discrete(labels=c("exist_germs" = "Germs", "exist_tooth" = "Tooth \n Fairy", "exist_vitamins" = "Vitamins", "exist_merm" = "Mermaids", "exist_elf" = "Elves", "exist_fairy" = "Fairies", "exist_soul" = "Souls", "exist_god" = "God", "exist_santa" = "Santa"))
-
-# faceting by age
-p_exist2 <- p_exist2 + facet_wrap(~Var1, nrow=2) +
-    theme(panel.spacing = unit(1, "lines"))
-
-p_exist2
-
-##############################################3
-## HL try and stretch the facets (length) so the numbers are more clear & nice looking
-```
-
 
 ## Predictions and analyses in preregistration (and more)
 
@@ -277,85 +121,19 @@ a.	Model with all 3 above (age, relig, control) + interactions = best fit model.
 #downloading libraries for multinomial reg
 library(foreign)
 library(nnet)
-
-
-
 ```
 
 ii.	Effects of age (and religiosity*) (and control) on interventionist concepts – interview questions
 1.	Could use linear regression if dv is sum of 4 questions. Best fit model (using AIC criterion etc)
 
-```{r age intervention interview reg}
-
-
-```
-
 iii.	Effects of age, etc on “intervention frequency task” (Does God make..?). Would just sum number of yes responses as dv.
 1.	Linear regression (+histogram of each question. Factor analysis to determine clusters)
-
-```{r age intervention task fa}
-# here is some of my old code on doing factor analysis
-
-# we're selecting our subset of data and calling it to a new dataframe
-d_practice_fa <- d_all %>% select(contains("practice_")) 
-
-# if any recoding needs to be done, it can look like this
-d_all1$PO5_abortion <- recode(d_all1$PO5_abortion, '1' = 7, '2'=6, '3'=5, '4'=4, '5'=3, '6'=2, '7'=1)
-d_all1$PO6_sex <- recode(d_all1$PO6_sex, '1' = 7, '2'=6, '3'=5, '4'=4, '5'=3, '6'=2, '7'=1)
-
-# Extract number of factors
-ev <- eigen(cor(d_all1)) # get eigenvalues
-ap <- parallel(subject=nrow(d_all1),var=ncol(d_all1),              rep=100,cent=.05)
-nS <- nScree(x=ev$values, aparallel=ap$eigen$qevpea)
-plotnScree(nS)
-
-## Exploratory Factor analysis, testing with 3 factors and 2 factors to start, using varimax rotation for all
-fact3 <- factanal(d_all1, 3, rotation="varimax") 
-print(fact, digits=2, cutoff=.3, sort=TRUE)
-
-fact2 <- factanal(d_all1, 2, rotation="varimax") 
-print(fact, digits=2, cutoff=.3, sort=TRUE)
-
-# this is to see if 1 factor is fine, which we'd then do a principal components analysis if this was the best loading
-#fact <- factanal(d_all, 1, rotation="varimax") # show improvement 5, 4, 3
-#print(fact, digits=2, cutoff=.3, sort=TRUE)
-
-# Reduce factors- we do this to see if taking out items makes the loadings more clear. regardless of the outcome we find, it's up to our discretion as researchers on whether or not to omit certain items from a set of questions based on rationale
-# d_all <- d_all %>% select(- Epistemic_4) %>% select(- Epistemic_6) # Why? 
-# fact <- factanal(d_all, 3, rotation="varimax")
-# print(fact, digits=2, cutoff=.3, sort=TRUE) # Optimal model w/3 factors 
-
-# here we're plotting our factors (3 and 2) to visually see where the items are loading
-load <- fact3$loadings[,1:3]
-plot(load,type="n") # set up plot
-text(load,labels=names(d_all1),cex=.7) # add variable names
-
-load <- fact2$loadings[,1:2]
-plot(load,type="n") # set up plot
-text(load,labels=names(d_all1),cex=.7) # add variable names
-
-```
-
-```{r age intervention task reg}
-
-
-```
 
 iv.	Effects of age on God real/pret (we can use kids who said pretend to get a general sense of God belief in our larger sample)
 1.	Binomial logistic regression
 
-```{r age god real reg}
-
-
-```
-
 v.	Effects of age on God certainty in our study sample
 1.	Binomial logistic regression
-
-```{r age god certainty reg}
-
-
-```
 
 ### Exploratory analyses: Qualitative responses to interview questions. 
 Also include here an analysis of what types of things kids think God does (intervention frequency task).
@@ -363,17 +141,7 @@ Also include here an analysis of what types of things kids think God does (inter
 1.  Factor analysis on “Does God..?” (intervention frequency) task. Then analyze whether the factors differ and differ by age
 	a. dv is continuous so repeated measures ANOVA with age group as iv (I don’t know how to do repeated measures if age is continuous – is there a repeated measure regression?)
 	b. add parent/relig questions to this?
-	
-```{r intervention freq FA}
-
-
-```
 
 2. Number and percent of each explanation type to assess whether we need to collapse categories – probably around 5 is ideal and we have more than that. Then collapse if we need to and calculate percentage of children’s responses in each category as a function of age and parent concepts/religiosity. Make graphs of these. 
 	a. logistic regression to assess effects of category type and interactions with age and religiosity (used this in W&C) – is dv proportion or number?
 	b. need to compute reliability (Cohen’s Kappa in SPSS)
-	
-```{r log reg}
-
-
-```
