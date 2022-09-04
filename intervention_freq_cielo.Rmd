@@ -7,8 +7,6 @@ output: html_document
 ---
 # Effects of age, religiosity, and control on interventionist concepts
 
-HOW ARE WE MEASURING RELIGIOSITY????
-
 ## This R Markdown file includes the following, each separated into chunks:
 
 1. Exploratory factor analysis to decide factor groupings in the intervention items
@@ -101,7 +99,7 @@ text(load,labels=names(d_fa1),cex=.7) # add variable names
 # so, from here, we'll use two factors and create average scores for them
 
 # creating our new dataframe
-d_intervention <- d_all %>% dplyr::select(starts_with("help_"), contains(c("helop_friends", "age", "gender", "control...6")))
+d_intervention <- d_all %>% dplyr::select(starts_with("help_"), contains(c("helop_friends", "age", "gender", "control...6", "relig_attendserv", "relig_tradition")))
 
 # recoding intervention colomns 
 d_intervention <- d_intervention %>% 
@@ -117,9 +115,15 @@ d_intervention <- d_intervention %>%
 # recoding gender here to use in our reg
 d_intervention$gender <- recode(d_intervention$gender, 'Male' = 1, 'Female'=2)
 d_intervention$control...6 <- recode(d_intervention$control...6, 'Really Disagree' = 1, 'Disagree'=2, 'Kind of Disagree' = 3, 'Kind of Agree' = 4, 'Agree' = 5, 'Really Agree' = 6)
+d_intervention$relig_attendserv <- recode(d_intervention$relig_attendserv, 'Never' = 1, 'Less than once a year'=2, 'A few times a year' = 3, 'A few times a month' = 4, 'A few times a week' = 5, 'Daily' = 6)
+d_intervention$relig_tradition <- recode(d_intervention$relig_tradition, 'Not at all important' = 1, 'Minimally important'=2, 'Moderately important' = 3, 'Very important' = 4)
+
+
 
 d_intervention$gender <- as.factor(d_intervention$gender)
 d_intervention$control <- as.numeric(d_intervention$control...6)
+d_intervention$relig_attendserv <- as.numeric(d_intervention$relig_attendserv)
+d_intervention$relig_tradition <- as.numeric(d_intervention$relig_tradition)
 
 #omitting NAs
 d_intervention <- na.omit(d_intervention)
@@ -128,6 +132,7 @@ d_intervention <- na.omit(d_intervention)
 d_intervention$environment <- rowSums(d_intervention[,c(2, 3, 4)]/3)
 d_intervention$people <- rowSums(d_intervention[,c(1, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14)]/11)
 d_intervention$totalinter <- rowSums(d_intervention[, c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14)]/14)
+d_intervention$religiosity <- rowSums(d_intervention[, c(18, 19)]/2)
 
 ```
 
@@ -371,7 +376,7 @@ reg3 <- lm(environment ~ age + gender + control, data = d_intervention)
 summary(reg3)
 tab_model(null_model, reg1, reg2, reg3)
 
-reg4 <- lm(environment ~ age + gender + control + age*gender + age*control + gender*control, data = d_intervention)
+reg4 <- lm(environment ~ age + gender + control + religiosity + age*gender + age*control + gender*control + age*religiosity + gender*religiosity + control*religiosity, data = d_intervention)
 summary(reg4)
 tab_model(null_model, reg1, reg2, reg3, reg4)
 
@@ -444,7 +449,6 @@ g_environment2.1 <- g_environment2.1 + geom_jitter(aes(color = gender), width = 
 
 g_environment2.1 + labs(x = 'Age', y = 'God intervention score - Environment') + 
   scale_color_discrete(labels=c('Male', 'Female'))
-
 
 ```
 
