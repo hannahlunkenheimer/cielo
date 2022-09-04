@@ -1,0 +1,83 @@
+---
+title: "child choice task-cielo"
+author: "Hannah Lunkenheimer"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+# Effects of age, religiosity, and control on interventionist concepts
+
+HOW ARE WE MEASURING RELIGIOSITY????
+
+## This R Markdown file includes the following, each separated into chunks:
+
+1. Exploratory factor analysis to decide factor groupings in the intervention items
+2. Histograms of each intervention item, split by gender
+3. Linear regression models with age, control, gender for environment, people, and total intervention scores
+4. Figures with predicted reg lines (by gender) for each environment, people, and total intervention scores
+
+iii.	Effects of age, etc on “intervention frequency task” (Does God make..?). Would just sum number of yes responses as dv.
+1.	Linear regression (+histogram of each question. Factor analysis to determine clusters)
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+
+library(moonBook)
+library(dplyr)
+
+# importing the data
+d_all <- read_csv("data/Cielo1_MergedFull_practice.csv")
+
+# now let's view our data
+#View(d_all)
+
+# some participant data needs to be thrown out completely according to the red rows in our CSV file, so let's remove those participants completely here (ID 129, 152, 175, and 277)
+subset(d_all, id_num != "129" & id_num != "152" & id_num != "175" & id_num != "277")
+# great, we've removed our 4 participants completely from our dataframe d_all and now have all of the participants we can use for analyses
+
+```
+
+```{r age intervention factor sums}
+# so, from here, we'll use two factors and create average scores for them
+
+# creating our new dataframe
+d_intervention <- d_all %>% dplyr::select(starts_with("help_"), contains(c("helop_friends", "age", "gender", "control...6")))
+
+# recoding intervention colomns 
+d_intervention <- d_intervention %>% 
+  mutate_at(vars(1:14),
+   ~as.numeric(dplyr::recode(.,
+    "Never"=1,
+    "Only at special times"=2,
+    "Pretty often"=3,
+    "Always"=4,
+    "always" = 4,
+    "IDK" = 5)))
+
+# recoding gender here to use in our reg
+d_intervention$gender <- recode(d_intervention$gender, 'Male' = 1, 'Female'=2)
+d_intervention$control...6 <- recode(d_intervention$control...6, 'Really Disagree' = 1, 'Disagree'=2, 'Kind of Disagree' = 3, 'Kind of Agree' = 4, 'Agree' = 5, 'Really Agree' = 6)
+
+d_intervention$gender <- as.factor(d_intervention$gender)
+d_intervention$control <- as.numeric(d_intervention$control...6)
+
+#omitting NAs
+d_intervention <- na.omit(d_intervention)
+
+# creating sum scores for our 2 factors (environment and people)
+d_intervention$environment <- rowSums(d_intervention[,c(2, 3, 4)]/3)
+d_intervention$people <- rowSums(d_intervention[,c(1, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14)]/11)
+d_intervention$totalinter <- rowSums(d_intervention[, c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14)]/14)
+
+```
