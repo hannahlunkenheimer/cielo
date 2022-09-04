@@ -129,7 +129,7 @@ addmargins(d_exist_counts)
 round(prop.table(d_exist_counts,2)*100,digits=0)
 df_ec <- as.data.frame(d_exist_counts)
 
-# creating our ggplot for all exist questions including both genders together. i'm labeling it p_exist becaues we're making a plot for the exist questions
+# creating our ggplot for all exist questions including both genders together. i'm labeling it p_exist because we're making a plot for the exist questions
 p_exist <- ggplot(data = df_ec, aes(x = Var2, y = Freq, fill = Var1)) +
        geom_bar(stat = "identity", width = .5) +
       geom_text(aes(label = Freq), position = position_stack(vjust = 0.5), color="black", size=3) +
