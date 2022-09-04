@@ -36,8 +36,6 @@ library(readr)
 
 ```
 
-
-
 ```{r importing the data}
 # importing the data
 d_all <- read_csv("data/Cielo1_MergedFull_practice.csv")
@@ -101,7 +99,6 @@ swim_plot
 
 # try making your own descriptive figures from any of the variables we have access to in our cielo data. if you're having trouble remembering what the column names are, use the View() function 
 ```
-
 
 ## Predictions and analyses in preregistration (and more)
 

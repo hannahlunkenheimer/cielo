@@ -9,32 +9,20 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
+# Effects of age, religiosity, and control on interventionist concepts - child choice
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+i.	Effects of age (and religiosity*) (and control**) on interventionist concepts - child choice (explicit concept) task
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+1.	Multinomial logistic regression
+a.	Model with all 3 above (age, relig, control) + interactions = best fit model. Put all 3 parent variables into the model and take out if not predictive. Test for multicollinearity. If yes, then Principal Components Analysis.
 
-# Effects of age, religiosity, and control on interventionist concepts
-
-HOW ARE WE MEASURING RELIGIOSITY????
-
-## This R Markdown file includes the following, each separated into chunks:
-
-1. Exploratory factor analysis to decide factor groupings in the intervention items
-2. Histograms of each intervention item, split by gender
-3. Linear regression models with age, control, gender for environment, people, and total intervention scores
-4. Figures with predicted reg lines (by gender) for each environment, people, and total intervention scores
-
-iii.	Effects of age, etc on “intervention frequency task” (Does God make..?). Would just sum number of yes responses as dv.
-1.	Linear regression (+histogram of each question. Factor analysis to determine clusters)
-
-```{r setup, include=FALSE}
+```{r leading data, include=FALSE}
 
 knitr::opts_chunk$set(echo = TRUE)
 
 library(moonBook)
 library(dplyr)
+library(readr)
 
 # importing the data
 d_all <- read_csv("data/Cielo1_MergedFull_practice.csv")
@@ -48,36 +36,130 @@ subset(d_all, id_num != "129" & id_num != "152" & id_num != "175" & id_num != "2
 
 ```
 
-```{r age intervention factor sums}
+```{r explicit concepts and sums}
 # so, from here, we'll use two factors and create average scores for them
 
 # creating our new dataframe
-d_intervention <- d_all %>% dplyr::select(starts_with("help_"), contains(c("helop_friends", "age", "gender", "control...6")))
-
-# recoding intervention colomns 
-d_intervention <- d_intervention %>% 
-  mutate_at(vars(1:14),
-   ~as.numeric(dplyr::recode(.,
-    "Never"=1,
-    "Only at special times"=2,
-    "Pretty often"=3,
-    "Always"=4,
-    "always" = 4,
-    "IDK" = 5)))
+d_explicitconcepts <- d_all %>% dplyr::select(contains(c("age", "gender", "control...6", "relig_attendserv", "relig_tradition", "explicit_concepts")))
 
 # recoding gender here to use in our reg
-d_intervention$gender <- recode(d_intervention$gender, 'Male' = 1, 'Female'=2)
-d_intervention$control...6 <- recode(d_intervention$control...6, 'Really Disagree' = 1, 'Disagree'=2, 'Kind of Disagree' = 3, 'Kind of Agree' = 4, 'Agree' = 5, 'Really Agree' = 6)
+d_explicitconcepts$gender <- recode(d_explicitconcepts$gender, 'Male' = 1, 'Female'=2)
+d_explicitconcepts$control...6 <- recode(d_explicitconcepts$control...6, 'Really Disagree' = 1, 'Disagree'=2, 'Kind of Disagree' = 3, 'Kind of Agree' = 4, 'Agree' = 5, 'Really Agree' = 6)
+d_explicitconcepts$relig_attendserv <- recode(d_explicitconcepts$relig_attendserv, 'Never' = 1, 'Less than once a year'=2, 'A few times a year' = 3, 'A few times a month' = 4, 'A few times a week' = 5, 'Daily' = 6)
+d_explicitconcepts$relig_tradition <- recode(d_explicitconcepts$relig_tradition, 'Not at all important' = 1, 'Minimally important'=2, 'Moderately important' = 3, 'Very important' = 4)
 
-d_intervention$gender <- as.factor(d_intervention$gender)
-d_intervention$control <- as.numeric(d_intervention$control...6)
+d_explicitconcepts$explicit_concepts <- recode(d_explicitconcepts$explicit_concepts, "Jordan, who says God doesn't really make things happen in people's lives." = "Jordan, who says God doesn't really make things happen in people's lives.", "Riley, who says God makes things happen in people's lives, but only at special times." = "Riley, who says God makes things happen in people's lives, but only at special times.", "Riley, who says God makes things happen in people's lives, but only special times." = "Riley, who says God makes things happen in people's lives, but only at special times.", "Sam, who says God makes things happen in people's lives, almost every day." = "Sam, who says God makes things happen in people's lives, almost every day.")
+
+d_explicitconcepts$explicit_concepts <- recode_factor(d_explicitconcepts$explicit_concepts, "Jordan, who says God doesn't really make things happen in people's lives." = "Jordan", "Riley, who says God makes things happen in people's lives, but only at special times." = "Riley", "Riley, who says God makes things happen in people's lives, but only special times" = "Riley", "Sam, who says God makes things happen in people's lives, almost every day." = "Sam")
+
+d_explicitconcepts$gender <- as.factor(d_explicitconcepts$gender)
+d_explicitconcepts$control <- as.numeric(d_explicitconcepts$control...6)
+d_explicitconcepts$relig_attendserv <- as.numeric(d_explicitconcepts$relig_attendserv)
+d_explicitconcepts$relig_tradition <- as.numeric(d_explicitconcepts$relig_tradition)
 
 #omitting NAs
-d_intervention <- na.omit(d_intervention)
+d_explicitconcepts <- na.omit(d_explicitconcepts)
+
+#deleting the old control...6 row
+d_explicitconcepts <- d_explicitconcepts[,-3]  # Ian Fellows
 
 # creating sum scores for our 2 factors (environment and people)
-d_intervention$environment <- rowSums(d_intervention[,c(2, 3, 4)]/3)
-d_intervention$people <- rowSums(d_intervention[,c(1, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14)]/11)
-d_intervention$totalinter <- rowSums(d_intervention[, c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14)]/14)
+d_explicitconcepts$religiosity <- rowSums(d_explicitconcepts[, c(3, 4)]/2)
+```
+
+```{r explicit concepts regs}
+# libraries for multinomial reg
+library(foreign)
+library(nnet)
+
+levels(d_explicitconcepts$explicit_concepts)
+
+# Setting the reference
+d_explicitconcepts$explicit_concepts <- relevel(d_explicitconcepts$explicit_concepts, ref = "Jordan")
+
+require(nnet)
+# Training the multinomial model
+multinom_model <- multinom(explicit_concepts ~ ., data = d_explicitconcepts)
+
+# Checking the model
+summary(multinom_model)
+
+# Just like binary logistic regression, we need to convert the coefficients to odds by taking the exponential of the coefficients.
+exp(coef(multinom_model))
+
+# The predicted values are saved as fitted.values in the model object. Let’s see the top 6 observations.
+head(round(fitted(multinom_model), 2))
+# The multinomial regression predicts the probability of a particular observation to be part of the said level. This is what we are seeing in the above table. Columns represent the classification levels and rows represent the observations.
+
+####################################
+# HL got lost here 
+####################################
 
 ```
+
+```{r multinomial reg another way}
+# Starting our example by import the data into R
+library(haven)
+d_explicit <- d_explicitconcepts # Get a new copy of data
+summary(d_explicit)
+
+library(jmv)
+
+# Load the multinom package
+library(nnet)
+# Since we are going to use Academic as the reference group, we need relevel the group.
+d_explicit$explicit_concepts2 <- relevel(as.factor(d_explicit$explicit_concepts), ref = "Jordan")
+#d_explicit$ses <- as.factor(d_explicit$ses)
+levels(d_explicit$explicit_concepts2)
+
+OIM <- multinom(explicit_concepts2 ~ 1, data = d_explicit)
+summary(OIM)
+
+multi_mo <- multinom(explicit_concepts2 ~ religiosity + gender + age, data = d_explicit,model=TRUE)
+summary(multi_mo)
+
+# Check the Z-score for the model (wald Z)
+z <- summary(multi_mo)$coefficients/summary(multi_mo)$standard.errors
+z
+
+# 2-tailed z test
+p <- (1 - pnorm(abs(z), 0, 1)) * 2
+p
+
+# Check the predicted probability for each program
+head(multi_mo$fitted.values,30)
+
+# We can get the predicted result by use predict function
+head(predict(multi_mo),30)
+
+# Test the goodness of fit
+chisq.test(d_explicit$explicit_concepts2,predict(multi_mo))
+
+# Use the lmtest package to run Likelihood Ratio Tests
+library(lmtest)
+lrtest(multi_mo, "religiosity") 
+lrtest(multi_mo, "gender") 
+lrtest(multi_mo, "age") 
+
+# Let's check our model again
+summary(multi_mo)
+
+# extract the coefficients from the model and exponentiate
+exp(coef(multi_mo))
+```
+```{r multinomial predicted model}
+# let's convert our data to tall format so we can include all of the same plots on the same figure
+library(reshape2)
+d_explicit_reshaped <- melt(d_explicit, id.vars= c("age", "explicit_concepts2"))
+
+library(effects)
+plot(Effect("religiosity",multi_mo))
+#shows predictions with confidence bands
+plot(Effect("religiosity",multi_mo),multiline=T)
+plot(Effect("gender",multi_mo),multiline=T)
+
+#shows multiple lines of predictions in the same plot
+plot(Effect("religiosity",multi_mo),style="stacked")
+# shows a stacked vertical bar chart of predictions
+```
+
