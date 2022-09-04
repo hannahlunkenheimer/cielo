@@ -4,6 +4,17 @@ author: "Hannah Lunkenheimer"
 date: "`r Sys.Date()`"
 output: html_document
 ---
+# Effects of IVs on intervention frequency task
+
+## This R Markdown file includes the following, each separated into chunks:
+
+1. Exploratory factor analysis to decide factor groupings in the intervention items
+2. Histograms of each intervention item, split by gender
+3. Linear regression models with age and gender for environment, people, and total intervention scores
+4. Figures with predicted reg lines (by gender) for each environment, people, and total intervention scores
+
+iii.	Effects of age, etc on “intervention frequency task” (Does God make..?). Would just sum number of yes responses as dv.
+1.	Linear regression (+histogram of each question. Factor analysis to determine clusters)
 
 ```{r setup, include=FALSE}
 
@@ -24,8 +35,7 @@ subset(d_all, id_num != "129" & id_num != "152" & id_num != "175" & id_num != "2
 
 ```
 
-iii.	Effects of age, etc on “intervention frequency task” (Does God make..?). Would just sum number of yes responses as dv.
-1.	Linear regression (+histogram of each question. Factor analysis to determine clusters)
+## Interventionist factor analysis 
 
 ```{r age intervention task fa}
 # here is some of my old code on doing factor analysis
@@ -111,11 +121,232 @@ d_intervention <- na.omit(d_intervention)
 # creating sum scores for our 2 factors (environment and people)
 d_intervention$environment <- rowSums(d_intervention[,c(2, 3, 4)]/3)
 d_intervention$people <- rowSums(d_intervention[,c(1, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14)]/11)
+d_intervention$totalinter <- rowSums(d_intervention[, c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14)]/14)
 
 View(d_intervention)
 ```
 
-```{r environment intervention null model}
+## Histograms of each interventionist item
+
+```{r intervention histograms}
+
+i_sick_plot <- ggplot(d_intervention, aes(help_sick, fill=gender)) +
+  geom_bar() +
+  labs(x='Child response', y="Participants", title ="Does God help sick people get better?") +
+  theme_light() +
+  scale_x_discrete(limits = c("1", "2", "3", 
+                             "4"),
+                   labels = c("Never", "Only at special times", 
+                              "Pretty often", "Always")) +
+  scale_fill_discrete(labels=c('Male', 'Female'))
+
+i_sun_plot <- ggplot(d_intervention, aes(help_sun, fill=gender)) +
+  geom_bar() +
+  labs(x='Child response', y="Participants", title ="Does God help the sun come up?") +
+  theme_light() +
+  scale_x_discrete(limits = c("1", "2", "3", 
+                             "4"),
+                   labels = c("Never", "Only at special times", 
+                              "Pretty often", "Always")) +
+  scale_fill_discrete(labels=c('Male', 'Female'))
+
+i_season_plot <- ggplot(d_intervention, aes(help_seasons, fill=gender)) +
+  geom_bar() +
+  labs(x='Child response', y="Participants", title ="Does God help make the seasons change?") +
+  theme_light() +
+  scale_x_discrete(limits = c("1", "2", "3", 
+                             "4"),
+                   labels = c("Never", "Only at special times", 
+                              "Pretty often", "Always")) +
+  scale_fill_discrete(labels=c('Male', 'Female'))
+
+i_plants_plot <- ggplot(d_intervention, aes(help_plants, fill=gender)) +
+  geom_bar() +
+  labs(x='Child response', y="Participants", title ="Does God help plants grow?") +
+  theme_light() +
+  scale_x_discrete(limits = c("1", "2", "3", 
+                             "4"),
+                   labels = c("Never", "Only at special times", 
+                              "Pretty often", "Always")) +
+  scale_fill_discrete(labels=c('Male', 'Female'))
+
+i_love_plot <- ggplot(d_intervention, aes(help_love, fill=gender)) +
+  geom_bar() +
+  labs(x='Child response', y="Participants", title ="Does God help people fall in love?") +
+  theme_light() +
+  scale_x_discrete(limits = c("1", "2", "3", 
+                             "4"),
+                   labels = c("Never", "Only at special times", 
+                              "Pretty often", "Always")) +
+  scale_fill_discrete(labels=c('Male', 'Female'))
+
+i_friends_plot <- ggplot(d_intervention, aes(helop_friends, fill=gender)) +
+  geom_bar() +
+  labs(x='Child response', y="Participants", title ="Does God help people become friends?") +
+  theme_light() +
+  scale_x_discrete(limits = c("1", "2", "3", 
+                             "4"),
+                   labels = c("Never", "Only at special times", 
+                              "Pretty often", "Always")) +
+  scale_fill_discrete(labels=c('Male', 'Female'))
+
+i_dreams_plot <- ggplot(d_intervention, aes(help_dreams, fill=gender)) +
+  geom_bar() +
+  labs(x='Child response', y="Participants", title ="Does God help give people good dreams?") +
+  theme_light() +
+  scale_x_discrete(limits = c("1", "2", "3", 
+                             "4"),
+                   labels = c("Never", "Only at special times", 
+                              "Pretty often", "Always")) +
+  scale_fill_discrete(labels=c('Male', 'Female'))
+
+i_find_plot <- ggplot(d_intervention, aes(help_find, fill=gender)) +
+  geom_bar() +
+  labs(x='Child response', y="Participants", title ="Does God help find lost things?") +
+  theme_light() +
+  scale_x_discrete(limits = c("1", "2", "3", 
+                             "4"),
+                   labels = c("Never", "Only at special times", 
+                              "Pretty often", "Always")) +
+  scale_fill_discrete(labels=c('Male', 'Female'))
+
+i_decide_plot <- ggplot(d_intervention, aes(help_decide, fill=gender)) +
+  geom_bar() +
+  labs(x='Child response', y="Participants", title ="Does God help people make hard decisions?") +
+  theme_light() +
+  scale_x_discrete(limits = c("1", "2", "3", 
+                             "4"),
+                   labels = c("Never", "Only at special times", 
+                              "Pretty often", "Always")) +
+  scale_fill_discrete(labels=c('Male', 'Female'))
+
+i_job_plot <- ggplot(d_intervention, aes(help_job, fill=gender)) +
+  geom_bar() +
+  labs(x='Child response', y="Participants", title ="Does God ever help people do well in school or at their job?") +
+  theme_light() +
+  scale_x_discrete(limits = c("1", "2", "3", 
+                             "4"),
+                   labels = c("Never", "Only at special times", 
+                              "Pretty often", "Always")) +
+  scale_fill_discrete(labels=c('Male', 'Female'))
+
+i_sports_plot <- ggplot(d_intervention, aes(help_sports, fill=gender)) +
+  geom_bar() +
+  labs(x='Child response', y="Participants", title ="Does God help people do well in games and sports?") +
+  theme_light() +
+  scale_x_discrete(limits = c("1", "2", "3", 
+                             "4"),
+                   labels = c("Never", "Only at special times", 
+                              "Pretty often", "Always")) +
+  scale_fill_discrete(labels=c('Male', 'Female'))
+
+i_happy_plot <- ggplot(d_intervention, aes(help_happy, fill=gender)) +
+  geom_bar() +
+  labs(x='Child response', y="Participants", title ="Does God help people feel happier?") +
+  theme_light() +
+  scale_x_discrete(limits = c("1", "2", "3", 
+                             "4"),
+                   labels = c("Never", "Only at special times", 
+                              "Pretty often", "Always")) +
+  scale_fill_discrete(labels=c('Male', 'Female'))
+
+i_brave_plot <- ggplot(d_intervention, aes(help_brave, fill=gender)) +
+  geom_bar() +
+  labs(x='Child response', y="Participants", title ="Does God help people feel braver about scary things?") +
+  theme_light() +
+  scale_x_discrete(limits = c("1", "2", "3", 
+                             "4"),
+                   labels = c("Never", "Only at special times", 
+                              "Pretty often", "Always")) +
+  scale_fill_discrete(labels=c('Male', 'Female'))
+
+i_safe_plot <- ggplot(d_intervention, aes(help_safe, fill=gender)) +
+  geom_bar() +
+  labs(x='Child response', y="Participants", title ="Does God keep people safe from danger?") +
+  theme_light() +
+  scale_x_discrete(limits = c("1", "2", "3", 
+                             "4"),
+                   labels = c("Never", "Only at special times", 
+                              "Pretty often", "Always")) +
+  scale_fill_discrete(labels=c('Male', 'Female'))
+
+i_sun_plot
+i_season_plot
+i_plants_plot
+
+i_sick_plot
+i_love_plot
+i_friends_plot
+i_dreams_plot
+i_find_plot
+i_decide_plot
+i_job_plot
+i_sports_plot
+i_happy_plot
+i_brave_plot
+i_safe_plot
+```
+
+```{r interventions altogether x gender bar figure}
+
+d_intervention2 <- d_all %>% dplyr::select(starts_with("help_"), contains(c("helop_friends", "age", "gender")))
+
+# recoding intervention colomns 
+d_intervention2 <- d_intervention2 %>% 
+  mutate_at(vars(1:14),
+   ~as.numeric(dplyr::recode(.,
+    "Never"=1,
+    "Only at special times"=2,
+    "Pretty often"=3,
+    "Always"=4,
+    "always" = 4,
+    "IDK" = 5)))
+
+# recoding gender here to use in our reg
+d_intervention2$gender <- recode(d_intervention2$gender, 'Male' = 1, 'Female'=2)
+
+d_intervention2$gender <- as.factor(d_intervention2$gender)
+
+#omitting NAs
+d_intervention2 <- na.omit(d_intervention2)
+
+# let's convert our data to tall format so we can include all of the same plots on the same figure
+library(reshape2)
+d_intervention_reshaped <- melt(d_intervention2, id.vars= c("age", "gender"))
+
+d_intervention_reshaped$value <- as.factor(d_intervention_reshaped$value)
+
+#let's view our tall data now
+View(d_intervention_reshaped)
+
+# here, i'm making a dataframe with frequency counts added in
+# d_intervention_reshaped_counts <- table(d_intervention_reshaped$value, d_intervention_reshaped$variable, d_intervention_reshaped$gender)
+# addmargins(d_intervention_reshaped_counts)
+# round(prop.table(d_intervention_reshaped_counts,2)*100,digits=0)
+# df_irc <- as.data.frame(d_intervention_reshaped_counts)
+# View(df_irc)
+# creating our ggplot for all exist questions including both genders together. i'm labeling it p_exist because we're making a plot for the exist questions
+p_irc <- ggplot(data = d_intervention_reshaped, aes(x = variable, y = age, fill = value)) +
+       geom_bar(stat = "identity", width = .5) +
+      geom_text(aes(label = value), position = position_stack(vjust = 0.5), color="black", size=3) +
+      theme_classic() +
+      labs(title="Children's responses to interventionist questions", x ="Item", y = "Counts", fill = "Response") +
+      theme(axis.text.x = element_text(angle=90))
+
+# fixing the x axis labels
+p_irc <- p_irc + scale_fill_discrete(labels=c("1" = "Never", "2" = "Only on special occasions", "3" = "Pretty often", "4" = "Always", "5" = "I don't know"))
+
+# faceting by gender
+# p_irc <- p_irc + facet_wrap(~Var3, ncol = 1) +
+#     theme(panel.spacing = unit(1, "lines"))
+
+p_irc
+
+```
+
+##Environment interventionist concepts only
+
+```{r environment intervention regs}
 library(arm)
 
 # we start by creating our null model with a fixed slope and no predictors
@@ -123,9 +354,7 @@ null_model <- lm(environment ~ 1, data = d_intervention)
 summary(null_model)
 tab_model(null_model)
 coef(null_model)
-```
 
-```{r environment intervention reg1}
 reg1 <- lm(environment ~ age, data = d_intervention)
 summary(reg1)
 tab_model(null_model, reg1)
@@ -142,7 +371,7 @@ AIC(reg1, reg2)
 
 ```
 
-```{r environment intervention reg1 plot}
+```{r environment intervention plot}
 # how should we visualize this data?
 
 g_environment <- ggplot(d_intervention,aes(y=environment,x=age)) +
@@ -188,9 +417,151 @@ g_environment2 <- ggplot(d_intervention,aes(y=environment,x=age,color=gender)) +
 
 g_environment2 <- g_environment2 + geom_jitter(aes(color = gender), width = 0.5, height = 0.5)
 
-g_environment2 + labs(x = 'Age', y = 'God intervention score - Environment')
+g_environment2 + labs(x = 'Age', y = 'God intervention score - Environment') + 
+  scale_color_discrete(labels=c('Male', 'Female'))
 
-g_environment2 + scale_fill_discrete(labels=c('Male', 'Female'))
 
+```
 
+## People intervention concepts only
+
+```{r people intervention regs}
+# we start by creating our null model with a fixed slope and no predictors
+null_modelp <- lm(people ~ 1, data = d_intervention)
+summary(null_modelp)
+tab_model(null_modelp)
+coef(null_modelp)
+
+reg1p <- lm(people ~ age, data = d_intervention)
+summary(reg1p)
+tab_model(null_modelp, reg1p)
+
+reg2p <- lm(people ~ age + gender, data = d_intervention)
+summary(reg2p)
+tab_model(null_modelp, reg1p, reg2p)
+
+anova(null_modelp, reg1p, reg2p)
+
+AIC(reg1p, reg2p)
+
+# we can see here that our second model is better (reg2)
+
+```
+
+```{r people intervention plot}
+# how should we visualize this data?
+
+g_people <- ggplot(d_intervention,aes(y=people,x=age)) +
+  geom_point() +
+  geom_jitter() +
+  geom_smooth(method="lm") +
+  theme_minimal()
+
+# plotting our data without reg lines
+g_people
+
+# You can make interactive plot easily with ggPredict() function included in ggiraphExtra package. this is me just messing around.
+library(ggiraphExtra)
+require(ggiraph)
+require(ggiraphExtra)
+require(plyr)
+ggPredict(reg1p,se=TRUE,interactive=TRUE)
+
+reg1p <- lm(people ~ age, data = d_intervention)
+summary(reg1p)
+tab_model(null_modelp, reg1p)
+
+# creating a bar plot with our data, need to add error bars to this figure
+
+g_people1 <- ggplot(data=d_intervention, aes(x=age, y=people)) +
+  geom_bar(stat="identity", fill="purple")+
+  theme_minimal()
+
+g_people1
+
+# not sure what this function does- need to check
+equation1p=function(x){coef(reg2p)[2]*x+coef(reg2p)[1]}
+equation2p=function(x){coef(reg2p)[2]*x+coef(reg2p)[1]+coef(reg2p)[3]}
+
+g_people2 <- ggplot(d_intervention,aes(y=people,x=age,color=gender)) + 
+        geom_point() +
+        stat_function(fun=equation1p,geom="line",color=scales::hue_pal()(2)[1]) +
+        stat_function(fun=equation2p,geom="line",color=scales::hue_pal()(2)[2]) +
+        theme_minimal()
+
+g_people2.1 <- g_people2 + geom_jitter(aes(color = gender), width = 0.5, height = 0.5)
+
+g_people2.2 <-g_people2.1 + labs(x = 'Age', y = 'God intervention score - People')
+
+g_people2.3 <- g_people2.2 + scale_color_discrete(labels=c('Male', 'Female'))
+
+g_people2.3
+```
+
+## Total intervention concepts all together
+
+```{r total intervention regs}
+# we start by creating our null model with a fixed slope and no predictors
+null_modelt <- lm(totalinter ~ 1, data = d_intervention)
+summary(null_modelt)
+tab_model(null_modelt)
+coef(null_modelt)
+
+reg1t <- lm(totalinter ~ age, data = d_intervention)
+summary(reg1t)
+tab_model(null_modelt, reg1t)
+
+reg2t <- lm(totalinter ~ age + gender, data = d_intervention)
+summary(reg2t)
+tab_model(null_modelt, reg1t, reg2t)
+
+anova(null_modelt, reg1t, reg2t)
+
+AIC(reg1t, reg2t)
+
+# we can see here that our second model is better (reg2)
+
+```
+
+```{r total intervention plot}
+
+g_total <- ggplot(d_intervention,aes(y=totalinter,x=age)) +
+  geom_point() +
+  geom_jitter() +
+  geom_smooth(method="lm") +
+  theme_minimal()
+
+# plotting our data without reg lines
+g_total
+
+# running reg with just age
+reg1t <- lm(people ~ age, data = d_intervention)
+summary(reg1t)
+tab_model(null_modelt, reg1t)
+
+# creating a bar plot with our data, need to add error bars to this figure
+
+g_total1 <- ggplot(data=d_intervention, aes(x=age, y=totalinter)) +
+  geom_bar(stat="identity", fill="purple")+
+  theme_minimal()
+
+g_total1
+
+# not sure what this function does- need to check
+equation1t=function(x){coef(reg2t)[2]*x+coef(reg2t)[1]}
+equation2t=function(x){coef(reg2t)[2]*x+coef(reg2t)[1]+coef(reg2t)[3]}
+
+g_total2 <- ggplot(d_intervention,aes(y=totalinter,x=age,color=gender)) + 
+        geom_point() +
+        stat_function(fun=equation1t,geom="line",color=scales::hue_pal()(2)[1]) +
+        stat_function(fun=equation2t,geom="line",color=scales::hue_pal()(2)[2]) +
+        theme_minimal()
+
+g_total2.1 <- g_total2 + geom_jitter(aes(color = gender), width = 0.5, height = 0.5)
+
+g_total2.2 <-g_total2.1 + labs(x = 'Age', y = 'God intervention score - Total')
+
+g_total2.3 <- g_total2.2 + scale_color_discrete(labels=c('Male', 'Female'))
+
+g_total2.3
 ```
