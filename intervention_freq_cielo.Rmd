@@ -330,6 +330,12 @@ d_intervention_reshaped$value <- as.factor(d_intervention_reshaped$value)
 View(d_intervention_reshaped)
 
 # here, i'm making a dataframe with frequency counts added in
+d_intervention_reshaped_counts <- table(d_intervention_reshaped$value, d_intervention_reshaped$variable, d_intervention_reshaped$gender)
+addmargins(d_intervention_reshaped_counts)
+round(prop.table(d_intervention_reshaped_counts,2)*100,digits=0)
+df_irc <- as.data.frame(d_intervention_reshaped_counts)
+
+# here, i'm making a dataframe with frequency counts added in
 # d_intervention_reshaped_counts <- table(d_intervention_reshaped$value, d_intervention_reshaped$variable, d_intervention_reshaped$gender)
 # addmargins(d_intervention_reshaped_counts)
 # round(prop.table(d_intervention_reshaped_counts,2)*100,digits=0)
@@ -350,6 +356,35 @@ p_irc <- p_irc + scale_fill_discrete(labels=c("1" = "Never", "2" = "Only on spec
 #     theme(panel.spacing = unit(1, "lines"))
 
 p_irc
+
+```
+
+```{r intervention score x gender bar figure}
+View(d_intervention_reshaped)
+
+# here, i'm making a dataframe with frequency counts added in
+d_intervention_reshaped_counts <- table(d_intervention_reshaped$value, d_intervention_reshaped$variable, d_intervention_reshaped$gender)
+addmargins(d_intervention_reshaped_counts)
+round(prop.table(d_intervention_reshaped_counts,2)*100,digits=0)
+df_irc <- as.data.frame(d_intervention_reshaped_counts)
+
+# creating our ggplot for all exist questions including both genders together. i'm labeling it p_exist because we're making a plot for the exist questions
+g_irc <- ggplot(data = df_irc, aes(x = Var2, y = Freq, fill = Var1)) +
+       geom_bar(stat = "identity", width = .5) +
+      geom_text(aes(label = Freq), position = position_stack(vjust = 0.5), color="black", size=3) +
+      theme_classic() +
+      labs(title="Children's responses to intervention frequency questions", x ="Item", y = "Counts", fill = "Response") +
+      theme(axis.text.x = element_text(angle=20))
+
+# fixing the x axis labels
+#p_irc <- p_irc + scale_x_discrete(labels=c("exist_germs" = "Germs", "exist_tooth" = "Tooth \n Fairy", "exist_vitamins" = #"Vitamins", "exist_merm" = "Mermaids", "exist_elf" = "Elves", "exist_fairy" = "Fairies", "exist_soul" = "Souls", "exist_god" #= "God", "exist_santa" = "Santa"))
+
+# faceting by gender
+g_irc <- g_irc + facet_wrap(~Var3, ncol = 1) +
+    theme(panel.spacing = unit(1, "lines")) +
+    scale_fill_discrete(labels=c("1" = "Never", "2" = "Only on special occasions", "3" = "Pretty often", "4" = "Always", "5" = "I don't know"))
+
+g_irc
 
 ```
 
@@ -382,7 +417,7 @@ tab_model(null_model, reg1, reg2, reg3, reg4)
 
 anova(null_model, reg1, reg2)
 
-AIC(reg1, reg2, reg3)
+AIC(reg1, reg2, reg3, reg4)
 ```
 
 ```{r environment intervention plot}

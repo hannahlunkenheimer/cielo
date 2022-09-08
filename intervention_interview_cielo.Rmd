@@ -1,0 +1,192 @@
+---
+title: "intervention_interview_cielo"
+author: "Hannah Lunkenheimer"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+### ii.	Effects of age (and religiosity*) (and control) on interventionist concepts – interview questions
+1.	Could use linear regression if dv is sum of 4 questions. Best fit model (using AIC criterion etc)
+
+```{r leading data, include=FALSE}
+
+library(moonBook)
+library(dplyr)
+library(readr)
+library(ggplot2)
+
+# importing the data
+d_all <- read_csv("data/Cielo1_MergedFull_practice.csv")
+
+# now let's view our data
+#View(d_all)
+
+# some participant data needs to be thrown out completely according to the red rows in our CSV file, so let's remove those participants completely here (ID 129, 152, 175, and 277)
+subset(d_all, id_num != "129" & id_num != "152" & id_num != "175" & id_num != "277")
+# great, we've removed our 4 participants completely from our dataframe d_all and now have all of the participants we can use for analyses
+
+```
+
+```{r interview and sums}
+# so, from here, we'll use two factors and create average scores for them
+
+# creating our new dataframe
+d_interview <- d_all %>% dplyr::select(contains(c("age", "gender", "control...6", "relig_attendserv", "relig_tradition", "rgod_happen_earth", "rgod_happen_ever", "rgod_happen_lives", "rpers_happen")))
+
+# recoding gender here to use in our reg
+d_interview$gender <- recode(d_interview$gender, 'Male' = 1, 'Female'=2)
+d_interview$control...6 <- recode(d_interview$control...6, 'Really Disagree' = 1, 'Disagree'=2, 'Kind of Disagree' = 3, 'Kind of Agree' = 4, 'Agree' = 5, 'Really Agree' = 6)
+d_interview$relig_attendserv <- recode(d_interview$relig_attendserv, 'Never' = 1, 'Less than once a year'=2, 'A few times a year' = 3, 'A few times a month' = 4, 'A few times a week' = 5, 'Daily' = 6)
+d_interview$relig_tradition <- recode(d_interview$relig_tradition, 'Not at all important' = 1, 'Minimally important'=2, 'Moderately important' = 3, 'Very important' = 4)
+d_interview$rgod_happen_earth <- recode(d_interview$rgod_happen_earth, 'No' = 1, 'Sometimes'=2, 'Yes' = 3, 'IDK' = 4)
+d_interview$rgod_happen_ever <- recode(d_interview$rgod_happen_ever, 'No' = 1, 'Sometimes'=2, 'Yes' = 3, 'IDK' = 4)
+d_interview$rgod_happen_lives <- recode(d_interview$rgod_happen_lives, 'No' = 1, 'Sometimes'=2, 'Yes' = 3, 'IDK' = 4)
+d_interview$rpers_happen <- recode(d_interview$rpers_happen, 'No' = 1, 'Sometimes'=2, 'Yes' = 3, 'IDK' = 4)
+
+
+d_interview$gender <- as.factor(d_interview$gender)
+d_interview$control <- as.numeric(d_interview$control...6)
+d_interview$relig_attendserv <- as.numeric(d_interview$relig_attendserv)
+d_interview$relig_tradition <- as.numeric(d_interview$relig_tradition)
+
+#omitting NAs
+d_interview <- na.omit(d_interview)
+
+#deleting the old control...6 row
+d_interview <- d_interview[,-3] 
+
+# creating sum scores for our 2 factors (environment and people)
+d_interview$religiosity <- rowSums(d_interview[, c(3, 4)]/2)
+d_interview$interviewscore <- rowSums(d_interview[, c(5, 6, 7, 8)]/4)
+
+```
+
+
+```{r visualizing interview score, items, and age}
+
+g_interviewage <- ggplot(d_interview,aes(y=interviewscore,x=age, color=gender)) +
+  geom_point() +
+  geom_jitter() +
+  theme_minimal() +
+  geom_smooth(method='lm') +
+  scale_color_discrete(labels=c('Male', 'Female'))
+g_rgod_happen_earth <- ggplot(d_interview,aes(y=rgod_happen_earth,x=age, color=gender)) +
+  geom_point() +
+  geom_jitter() +
+  theme_minimal() +
+  geom_smooth(method='lm') +
+  scale_color_discrete(labels=c('Male', 'Female'))
+g_rgod_happen_ever <- ggplot(d_interview,aes(y=rgod_happen_ever,x=age, color=gender)) +
+  geom_point() +
+  geom_jitter() +
+  theme_minimal() +
+  geom_smooth(method='lm')+
+  scale_color_discrete(labels=c('Male', 'Female'))
+g_rgod_happen_lives <- ggplot(d_interview,aes(y=rgod_happen_lives,x=age, color=gender)) +
+  geom_point() +
+  geom_jitter() +
+  theme_minimal() +
+  geom_smooth(method='lm')+
+  scale_color_discrete(labels=c('Male', 'Female'))
+g_rpers_happen <- ggplot(d_interview,aes(y=rpers_happen,x=age, color=gender)) +
+  geom_point() +
+  geom_jitter() +
+  theme_minimal() +
+  geom_smooth(method='lm')+
+  scale_color_discrete(labels=c('Male', 'Female'))
+
+g_interviewage
+g_rgod_happen_earth
+g_rgod_happen_ever
+g_rgod_happen_lives
+g_rpers_happen
+```
+
+```{r visualizing interview score, items, and religiosity}
+
+rg_interview <- ggplot(d_interview,aes(y=interviewscore,x=religiosity, color=gender)) +
+  geom_point() +
+  geom_jitter() +
+  theme_minimal() +
+  geom_smooth(method='lm')+
+  scale_color_discrete(labels=c('Male', 'Female'))
+rg_rgod_happen_earth <- ggplot(d_interview,aes(y=rgod_happen_earth,x=religiosity, color=gender)) +
+  geom_point() +
+  geom_jitter() +
+  theme_minimal() +
+  geom_smooth(method='lm')+
+  scale_color_discrete(labels=c('Male', 'Female'))
+rg_rgod_happen_ever <- ggplot(d_interview,aes(y=rgod_happen_ever,x=religiosity, color=gender)) +
+  geom_point() +
+  geom_jitter() +
+  theme_minimal() +
+  geom_smooth(method='lm')+
+  scale_color_discrete(labels=c('Male', 'Female'))
+rg_rgod_happen_lives <- ggplot(d_interview,aes(y=rgod_happen_lives,x=religiosity, color=gender)) +
+  geom_point() +
+  geom_jitter() +
+  theme_minimal() +
+  geom_smooth(method='lm')+
+  scale_color_discrete(labels=c('Male', 'Female'))
+rg_rpers_happen <- ggplot(d_interview,aes(y=rpers_happen,x=religiosity, color=gender)) +
+  geom_point() +
+  geom_jitter() +
+  theme_minimal() +
+  geom_smooth(method='lm')+
+  scale_color_discrete(labels=c('Male', 'Female'))
+
+rg_interview
+rg_rgod_happen_earth
+rg_rgod_happen_ever
+rg_rgod_happen_lives
+rg_rpers_happen
+```
+
+```{r reg interviews}
+library(sjPlot)
+# we start by creating our null model with a fixed slope and no predictors
+null_model <- lm(interviewscore ~ 1, data = d_interview)
+summary(null_model)
+coef(null_model)
+
+reg1 <- lm(interviewscore ~ age, data = d_interview)
+summary(reg1)
+coef(reg1)
+
+reg2 <- lm(interviewscore ~ age + gender, data = d_interview)
+summary(reg2)
+coef(reg2)
+
+reg3 <- lm(interviewscore ~ age + gender + religiosity, data = d_interview)
+summary(reg3)
+coef(reg3)
+
+reg4 <- lm(interviewscore ~ age + gender + religiosity + control, data = d_interview)
+summary(reg4)
+coef(reg4)
+
+reg5 <- lm(interviewscore ~ age + gender + religiosity + control + age*gender + age*religiosity + gender*religiosity + age*control + gender*control + religiosity*control, data = d_interview)
+summary(reg5)
+coef(reg5)
+
+# i think this model is the best!
+reg6 <- lm(interviewscore ~ age + gender + religiosity + control + religiosity*control, data = d_interview)
+summary(reg6)
+coef(reg6)
+
+anova(null_model, reg1, reg2, reg3, reg4, reg5, reg6)
+tab_model(null_model, reg1, reg2, reg3, reg4, reg5, reg6)
+AIC(null_model, reg1, reg2, reg3, reg4, reg5, reg6)
+
+```
+
+```{r reg plotted}
+
+# need to plot reg6 line to show predicted values
+```
+
+
+```
