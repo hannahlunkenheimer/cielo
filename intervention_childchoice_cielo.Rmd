@@ -16,9 +16,7 @@ i.	Effects of age (and religiosity*) (and control**) on interventionist concepts
 1.	Multinomial logistic regression
 a.	Model with all 3 above (age, relig, control) + interactions = best fit model. Put all 3 parent variables into the model and take out if not predictive. Test for multicollinearity. If yes, then Principal Components Analysis.
 
-```{r leading data, include=FALSE}
-
-knitr::opts_chunk$set(echo = TRUE)
+```{r loading data, include=FALSE}
 
 library(moonBook)
 library(dplyr)
