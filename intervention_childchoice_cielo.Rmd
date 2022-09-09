@@ -148,16 +148,27 @@ exp(coef(multi_mo))
 ```{r multinomial predicted model}
 # let's convert our data to tall format so we can include all of the same plots on the same figure
 library(reshape2)
+library(car)
 d_explicit_reshaped <- melt(d_explicit, id.vars= c("age", "explicit_concepts2"))
 
 library(effects)
 plot(Effect("religiosity",multi_mo))
+
 #shows predictions with confidence bands
-plot(Effect("religiosity",multi_mo),multiline=T)
+relig <- plot(Effect("religiosity",multi_mo),multiline=T)
+
+relig
+
 plot(Effect("gender",multi_mo),multiline=T)
 
 #shows multiple lines of predictions in the same plot
 plot(Effect("religiosity",multi_mo),style="stacked")
 # shows a stacked vertical bar chart of predictions
+
 ```
+
+```{r ggplot effects modeling}
+
+```
+
 

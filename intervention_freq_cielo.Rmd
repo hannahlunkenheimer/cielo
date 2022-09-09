@@ -19,11 +19,15 @@ iii.	Effects of age, etc on “intervention frequency task” (Does God make..?)
 
 ```{r setup, include=FALSE}
 
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(dev = "png",
+                      dpi = 300,
+                      echo = FALSE,
+                      cache = TRUE)
 
 library(moonBook)
 library(dplyr)
-
+library(readr)
+library(ggplot2)
 # importing the data
 d_all <- read_csv("data/Cielo1_MergedFull_practice.csv")
 
@@ -68,6 +72,9 @@ nS <- nScree(x=ev$values, aparallel=ap$eigen$qevpea)
 plotnScree(nS)
 
 ## Exploratory Factor analysis, testing with 3 factors and 2 factors to start, using varimax rotation for all
+fact4 <- factanal(d_fa1, 4, rotation="varimax") 
+print(fact4, digits=2, cutoff=.3, sort=TRUE)
+
 fact3 <- factanal(d_fa1, 3, rotation="varimax") 
 print(fact3, digits=2, cutoff=.3, sort=TRUE)
 
@@ -84,13 +91,17 @@ print(fact2, digits=2, cutoff=.3, sort=TRUE)
 # print(fact, digits=2, cutoff=.3, sort=TRUE) # Optimal model w/3 factors 
 
 # here we're plotting our factors (3 and 2) to visually see where the items are loading
-load <- fact3$loadings[,1:3]
-plot(load,type="n") # set up plot
-text(load,labels=names(d_fa1),cex=.7) # add variable names
+load4 <- fact4$loadings[,1:4]
+plot(load4,type="n") # set up plot
+text(load4,labels=names(d_fa1),cex=.7) # add variable names
 
-load <- fact2$loadings[,1:2]
-plot(load,type="n") # set up plot
-text(load,labels=names(d_fa1),cex=.7) # add variable names
+load3 <- fact3$loadings[,1:3]
+plot(load3,type="n") # set up plot
+text(load3,labels=names(d_fa1),cex=.7) # add variable names
+
+load2 <- fact2$loadings[,1:2]
+plot(load2,type="n") # set up plot
+text(load2,labels=names(d_fa1),cex=.7) # add variable names
 
 # i can see here that we have two distinct groups (i prefer 2 factors to 3) where the first factor loads seasons, sun, and plants (nature/environment) and the second factor loads god's intervening with people (not the environment)
 ```
@@ -345,7 +356,7 @@ df_irc <- as.data.frame(d_intervention_reshaped_counts)
 p_irc <- ggplot(data = d_intervention_reshaped, aes(x = variable, y = age, fill = value)) +
        geom_bar(stat = "identity", width = .5) +
       theme_classic() +
-      labs(title="Children's responses to interventionist questions", x ="Item", y = "Counts", fill = "Response") +
+      labs(title="Children's responses to God interventionist frequency questions", x ="Item", y = "Counts", fill = "Response") +
       theme(axis.text.x = element_text(angle=90))
 
 # fixing the x axis labels
@@ -360,7 +371,6 @@ p_irc
 ```
 
 ```{r intervention score x gender bar figure}
-View(d_intervention_reshaped)
 
 # here, i'm making a dataframe with frequency counts added in
 d_intervention_reshaped_counts <- table(d_intervention_reshaped$value, d_intervention_reshaped$variable, d_intervention_reshaped$gender)
@@ -368,23 +378,40 @@ addmargins(d_intervention_reshaped_counts)
 round(prop.table(d_intervention_reshaped_counts,2)*100,digits=0)
 df_irc <- as.data.frame(d_intervention_reshaped_counts)
 
+cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442")
+
 # creating our ggplot for all exist questions including both genders together. i'm labeling it p_exist because we're making a plot for the exist questions
 g_irc <- ggplot(data = df_irc, aes(x = Var2, y = Freq, fill = Var1)) +
+    scale_fill_manual(values=cbPalette, labels=c("1" = "Never", "2" = "Only on special occasions", "3" = "Pretty often", "4" = "Always", "5" = "I don't know")) +
        geom_bar(stat = "identity", width = .5) +
-      geom_text(aes(label = Freq), position = position_stack(vjust = 0.5), color="black", size=3) +
       theme_classic() +
-      labs(title="Children's responses to intervention frequency questions", x ="Item", y = "Counts", fill = "Response") +
-      theme(axis.text.x = element_text(angle=20))
+      labs(title="Figure 1. Children's responses to intervention frequency questions", x = "Question", y = "Counts", fill = "Response") +
+      theme(axis.text.x = element_text(angle=01))
+
+#g_irc <- g_irc + scale_fill_discrete(labels=c("1" = "Never", "2" = "Only on special occasions", "3" = "Pretty #often", "4" = "Always", "5" = "I don't know"))
+
+# can add this line back in if we want labels on each of the response blocks
+      #geom_text(aes(label = Freq), position = position_stack(vjust = 0.5), color="black", size=1) +
+
+
+# changing the label names
+g_irc <- g_irc + scale_x_discrete(labels=c("help_sick" = "Sick\npeople", "help_sun" = "Sun\nrise", "help_seasons" = "Seasons\nchange", "help_plants" = "Plants\ngrow", "help_love" = "Fall\nin\nlove", "help_dreams" = "Good\ndreams", "help_find" = "Find\nthings", "help_decide" = "Hard\ndecisions", "help_job" = "Good\nat\njob", "help_sports" = "Good\nat\nsports", "help_happy" = "Feel\nhappy", "help_brave" = "Feel\nbrave", "help_safe" = "Safe\nfrom\ndanger", "helop_friends"= "Become\nfriends"))
+
+g_irc <- g_irc + theme(legend.position="bottom")
+
+g_irc
+
+# reordering the labels to be environment and people
 
 # fixing the x axis labels
 #p_irc <- p_irc + scale_x_discrete(labels=c("exist_germs" = "Germs", "exist_tooth" = "Tooth \n Fairy", "exist_vitamins" = #"Vitamins", "exist_merm" = "Mermaids", "exist_elf" = "Elves", "exist_fairy" = "Fairies", "exist_soul" = "Souls", "exist_god" #= "God", "exist_santa" = "Santa"))
 
 # faceting by gender
-g_irc <- g_irc + facet_wrap(~Var3, ncol = 1) +
-    theme(panel.spacing = unit(1, "lines")) +
-    scale_fill_discrete(labels=c("1" = "Never", "2" = "Only on special occasions", "3" = "Pretty often", "4" = "Always", "5" = "I don't know"))
-
-g_irc
+#g_irc <- g_irc + facet_wrap(~Var3, ncol = 1) +
+#    theme(panel.spacing = unit(1, "lines")) +
+#    scale_fill_discrete(labels=c("1" = "Never", "2" = "Only on special occasions", "3" = "Pretty often", "4" = #"Always", "5" = "I don't know"))
+#
+#g_irc
 
 ```
 
@@ -392,6 +419,7 @@ g_irc
 
 ```{r environment intervention regs}
 library(arm)
+library(sjPlot)
 
 # we start by creating our null model with a fixed slope and no predictors
 null_model <- lm(environment ~ 1, data = d_intervention)
@@ -420,71 +448,88 @@ anova(null_model, reg1, reg2)
 AIC(reg1, reg2, reg3, reg4)
 ```
 
+```{r environment intervention regs part2}
+
+reg4 <- lm(environment ~ age + gender + control + religiosity + age*gender + age*control + gender*control + age*religiosity + gender*religiosity + control*religiosity, data = d_intervention)
+summary(reg4)
+reg5 <- lm(environment ~ age + gender + control + religiosity + gender*control, data = d_intervention)
+summary(reg5)
+tab_model(reg1, reg4, reg5)
+
+AIC(reg1, reg4, reg5)
+
+#reg5 is the best model with age, gender, control, religiosity, and gender*control
+
+```
+
 ```{r environment intervention plot}
 # how should we visualize this data?
+cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442")
 
 g_environment <- ggplot(d_intervention,aes(y=environment,x=age)) +
-  geom_point() +
+  geom_point(color = "#999999") +
   geom_jitter() +
-  geom_smooth(method="lm") +
+  geom_smooth(method="lm", color = "#E69F00") +
   theme_minimal()
 
 # plotting our data without reg lines
 g_environment
 
-# You can make interactive plot easily with ggPredict() function included in ggiraphExtra package. this is me just messing around.
-library(ggiraphExtra)
-require(ggiraph)
-require(ggiraphExtra)
-require(plyr)
-ggPredict(reg1,se=TRUE,interactive=TRUE)
-
-reg1 <- lm(environment ~ age, data = d_intervention)
-summary(reg1)
-tab_model(null_model, reg1)
-
-g_environment1 <- ggplot(data=d_intervention, aes(x=age, y=environment)) +
-  geom_bar(stat="identity", fill="purple")+
-  theme_minimal()
-
-g_environment1
-
-# need to add error bars to this figure
-
-reg2 <- lm(environment ~ age + gender, data = d_intervention)
-summary(reg2)
-tab_model(null_model, reg1, reg2)
-
-#making the figure with reg2
-equation1=function(x){coef(reg2)[2]*x+coef(reg2)[1]}
-equation2=function(x){coef(reg2)[2]*x+coef(reg2)[1]+coef(reg2)[3]}
-
-g_environment2 <- ggplot(d_intervention,aes(y=environment,x=age,color=gender)) + 
-        geom_point() +
-        stat_function(fun=equation1,geom="line",color=scales::hue_pal()(2)[1]) +
-        stat_function(fun=equation2,geom="line",color=scales::hue_pal()(2)[2]) +
-        theme_minimal()
-
-g_environment2 <- g_environment2 + geom_jitter(aes(color = gender), width = 0.2, height = 0.2)
-
-g_environment2 + labs(x = 'Age', y = 'God intervention score - Environment') + 
-  scale_color_discrete(labels=c('Male', 'Female'))
-
-#making the figure with reg3
-equation1.1=function(x){coef(reg3)[2]*x+coef(reg3)[1]}
-equation2.1=function(x){coef(reg3)[2]*x+coef(reg3)[1]+coef(reg3)[3]}
-
-g_environment2.1 <- ggplot(d_intervention,aes(y=environment,x=age,color=gender)) + 
-        geom_point() +
-        stat_function(fun=equation1.1,geom="line",color=scales::hue_pal()(2)[1]) +
-        stat_function(fun=equation2.1,geom="line",color=scales::hue_pal()(2)[2]) +
-        theme_minimal()
-
-g_environment2.1 <- g_environment2.1 + geom_jitter(aes(color = gender), width = 0.2, height = 0.2)
-
-g_environment2.1 + labs(x = 'Age', y = 'God intervention score - Environment') + 
-  scale_color_discrete(labels=c('Male', 'Female'))
-
+# You can make interactive plot easily with ggPredict() function included in #ggiraphExtra package. this is me just messing around.
+#library(ggiraphExtra)
+#require(ggiraph)
+#require(ggiraphExtra)
+#require(plyr)
+#ggPredict(reg1,se=TRUE,interactive=TRUE)
+#
+#reg1 <- lm(environment ~ age, data = d_intervention)
+#summary(reg1)
+#tab_model(null_model, reg1)
+#
+#g_environment1 <- ggplot(data=d_intervention, aes(x=age, y=environment)) +
+#  geom_bar(stat="identity", fill="purple")+
+#  theme_minimal()
+#
+#g_environment1
+#
+## need to add error bars to this figure
+#
+#reg2 <- lm(environment ~ age + gender, data = d_intervention)
+#summary(reg2)
+#tab_model(null_model, reg1, reg2)
+#
+##making the figure with reg2
+#equation1=function(x){coef(reg2)[2]*x+coef(reg2)[1]}
+#equation2=function(x){coef(reg2)[2]*x+coef(reg2)[1]+coef(reg2)[3]}
+#
+#g_environment2 <- ggplot(d_intervention,aes(y=environment,x=age,color=gender)) + 
+#        geom_point() +
+#        stat_function(fun=equation1,geom="line",color=scales::hue_pal()(2)[1]) +
+#        stat_function(fun=equation2,geom="line",color=scales::hue_pal()(2)[2]) +
+#        theme_minimal()
+#
+#g_environment2 <- g_environment2 + geom_jitter(aes(color = gender), width = 0.2, height #= 0.2)
+#
+#g_environment2 + labs(x = 'Age', y = 'God intervention score - Environment') + 
+#  scale_color_discrete(labels=c('Male', 'Female'))
+#
+##making the figure with reg3
+#equation1.1=function(x){coef(reg3)[2]*x+coef(reg3)[1]}
+#equation2.1=function(x){coef(reg3)[2]*x+coef(reg3)[1]+coef(reg3)[3]}
+#
+#g_environment2.1 <- ggplot(d_intervention,aes(y=environment,x=age,color=gender)) + 
+#        geom_point() +
+#        stat_function(fun=equation1.1,geom="line",color=scales::hue_pal()(2)[1]) +
+#        stat_function(fun=equation2.1,geom="line",color=scales::hue_pal()(2)[2]) +
+#        theme_minimal()
+#
+#g_environment2.1 <- g_environment2.1 + geom_jitter(aes(color = gender), width = 0.2, #height = 0.2)
+#
+#g_environment2.1 + labs(x = 'Age', y = 'God intervention score - Environment') + 
+#  scale_color_discrete(labels=c('Male', 'Female'))
+#
+######################
+## HL NEEDS TO MAKE THIS FIGURE FOR REG 5 CORRECTLY- DON'T THINK I DID IT RIGHT IN PREVIOUS TRIES...
 ```
 
 ## People intervention concepts only
@@ -525,41 +570,41 @@ g_people <- ggplot(d_intervention,aes(y=people,x=age)) +
 g_people
 
 # You can make interactive plot easily with ggPredict() function included in ggiraphExtra package. this is me just messing around.
-library(ggiraphExtra)
-require(ggiraph)
-require(ggiraphExtra)
-require(plyr)
-ggPredict(reg1p,se=TRUE,interactive=TRUE)
-
-reg1p <- lm(people ~ age, data = d_intervention)
-summary(reg1p)
-tab_model(null_modelp, reg1p)
-
-# creating a bar plot with our data, need to add error bars to this figure
-
-g_people1 <- ggplot(data=d_intervention, aes(x=age, y=people)) +
-  geom_bar(stat="identity", fill="purple")+
-  theme_minimal()
-
-g_people1
-
-# not sure what this function does- need to check
-equation1p=function(x){coef(reg2p)[2]*x+coef(reg2p)[1]}
-equation2p=function(x){coef(reg2p)[2]*x+coef(reg2p)[1]+coef(reg2p)[3]}
-
-g_people2 <- ggplot(d_intervention,aes(y=people,x=age,color=gender)) + 
-        geom_point() +
-        stat_function(fun=equation1p,geom="line",color=scales::hue_pal()(2)[1]) +
-        stat_function(fun=equation2p,geom="line",color=scales::hue_pal()(2)[2]) +
-        theme_minimal()
-
-g_people2.1 <- g_people2 + geom_jitter(aes(color = gender), width = 0.5, height = 0.5)
-
-g_people2.2 <-g_people2.1 + labs(x = 'Age', y = 'God intervention score - People')
-
-g_people2.3 <- g_people2.2 + scale_color_discrete(labels=c('Male', 'Female'))
-
-g_people2.3
+#library(ggiraphExtra)
+#require(ggiraph)
+#require(ggiraphExtra)
+#require(plyr)
+#ggPredict(reg1p,se=TRUE,interactive=TRUE)
+#
+#reg1p <- lm(people ~ age, data = d_intervention)
+#summary(reg1p)
+#tab_model(null_modelp, reg1p)
+#
+## creating a bar plot with our data, need to add error bars to this figure
+#
+#g_people1 <- ggplot(data=d_intervention, aes(x=age, y=people)) +
+#  geom_bar(stat="identity", fill="purple")+
+#  theme_minimal()
+#
+#g_people1
+#
+## not sure what this function does- need to check
+#equation1p=function(x){coef(reg2p)[2]*x+coef(reg2p)[1]}
+#equation2p=function(x){coef(reg2p)[2]*x+coef(reg2p)[1]+coef(reg2p)[3]}
+#
+#g_people2 <- ggplot(d_intervention,aes(y=people,x=age,color=gender)) + 
+#        geom_point() +
+#        stat_function(fun=equation1p,geom="line",color=scales::hue_pal()(2)[1]) +
+#        stat_function(fun=equation2p,geom="line",color=scales::hue_pal()(2)[2]) +
+#        theme_minimal()
+#
+#g_people2.1 <- g_people2 + geom_jitter(aes(color = gender), width = 0.5, height = 0.5)
+#
+#g_people2.2 <-g_people2.1 + labs(x = 'Age', y = 'God intervention score - People')
+#
+#g_people2.3 <- g_people2.2 + scale_color_discrete(labels=c('Male', 'Female'))
+#
+#g_people2.3
 ```
 
 ## Total intervention concepts all together
@@ -588,44 +633,78 @@ AIC(reg1t, reg2t)
 ```
 
 ```{r total intervention plot}
+# how should we visualize this data?
+cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442")
+
+g_environment <- ggplot(d_intervention,aes(y=environment,x=age)) +
+  geom_point() +
+  geom_jitter() +
+  geom_smooth(method="lm", color = "#E69F00") +
+  theme_minimal()
+
+# plotting our data without reg lines
+g_environment
+
+g_people <- ggplot(d_intervention,aes(y=people,x=age)) +
+  geom_point() +
+  geom_jitter() +
+  geom_smooth(method="lm", color = "#56B4E9") +
+  theme_minimal()
+
+# plotting our data without reg lines
+g_people
 
 g_total <- ggplot(d_intervention,aes(y=totalinter,x=age)) +
   geom_point() +
   geom_jitter() +
-  geom_smooth(method="lm") +
+  geom_smooth(method="lm", color = "#009E73") +
   theme_minimal()
 
 # plotting our data without reg lines
 g_total
 
-# running reg with just age
-reg1t <- lm(people ~ age, data = d_intervention)
-summary(reg1t)
-tab_model(null_modelt, reg1t)
+#plotting regression lines on the same figure
 
-# creating a bar plot with our data, need to add error bars to this figure
+g_allinter <- ggplot(d_intervention, aes(age,totalinter)) + 
+  geom_jitter(color="#999999") +
+  geom_smooth(aes(age,environment), color="#E69F00", method="lm",se=FALSE) +
+  geom_smooth(aes(age,people), color="#56B4E9", method="lm",se=FALSE) + 
+  geom_smooth(aes(age,totalinter), color="#009E73", method="lm",se=FALSE)
 
-g_total1 <- ggplot(data=d_intervention, aes(x=age, y=totalinter)) +
-  geom_bar(stat="identity", fill="purple")+
+g_allinter <- g_allinter +
+   labs(title="Figure 2. Predicted probabilities of interventionist frequency concepts across childhood", x = "Age", y = "Intervention frequency score", fill = "Response") +
   theme_minimal()
 
-g_total1
+g_allinter
+# running reg with just age
+#reg1t <- lm(people ~ age, data = d_intervention)
+#summary(reg1t)
+#tab_model(null_modelt, reg1t)
+#
+## creating a bar plot with our data, need to add error bars to this figure
+#
+#g_total1 <- ggplot(data=d_intervention, aes(x=age, y=totalinter)) +
+#  geom_bar(stat="identity", fill="purple")+
+#  theme_minimal()
+#
+#g_total1
+#
+## not sure what this function does- need to check
+#equation1t=function(x){coef(reg2t)[2]*x+coef(reg2t)[1]}
+#equation2t=function(x){coef(reg2t)[2]*x+coef(reg2t)[1]+coef(reg2t)[3]}
+#
+#g_total2 <- ggplot(d_intervention,aes(y=totalinter,x=age,color=gender)) + 
+#        geom_point() +
+#        stat_function(fun=equation1t,geom="line",color=scales::hue_pal()(2)[1]) +
+#        stat_function(fun=equation2t,geom="line",color=scales::hue_pal()(2)[2]) +
+#        theme_minimal()
+#
+#g_total2.1 <- g_total2 + geom_jitter(aes(color = gender), width = 0.5, height = 0.5)
+#
+#g_total2.2 <-g_total2.1 + labs(x = 'Age', y = 'God intervention score - Total')
+#
+#g_total2.3 <- g_total2.2 + scale_color_discrete(labels=c('Male', 'Female'))
+#
+#g_total2.3
 
-# not sure what this function does- need to check
-equation1t=function(x){coef(reg2t)[2]*x+coef(reg2t)[1]}
-equation2t=function(x){coef(reg2t)[2]*x+coef(reg2t)[1]+coef(reg2t)[3]}
-
-g_total2 <- ggplot(d_intervention,aes(y=totalinter,x=age,color=gender)) + 
-        geom_point() +
-        stat_function(fun=equation1t,geom="line",color=scales::hue_pal()(2)[1]) +
-        stat_function(fun=equation2t,geom="line",color=scales::hue_pal()(2)[2]) +
-        theme_minimal()
-
-g_total2.1 <- g_total2 + geom_jitter(aes(color = gender), width = 0.5, height = 0.5)
-
-g_total2.2 <-g_total2.1 + labs(x = 'Age', y = 'God intervention score - Total')
-
-g_total2.3 <- g_total2.2 + scale_color_discrete(labels=c('Male', 'Female'))
-
-g_total2.3
 ```
