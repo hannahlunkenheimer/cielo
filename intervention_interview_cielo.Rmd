@@ -14,9 +14,9 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r leading data, include=FALSE}
 
 library(moonBook)
-library(dplyr)
 library(readr)
 library(ggplot2)
+library(dplyr)
 
 # importing the data
 d_all <- read_csv("data/Cielo1_MergedFull_practice.csv")
@@ -37,14 +37,14 @@ subset(d_all, id_num != "129" & id_num != "152" & id_num != "175" & id_num != "2
 d_interview <- d_all %>% dplyr::select(contains(c("age", "gender", "control...6", "relig_attendserv", "relig_tradition", "rgod_happen_earth", "rgod_happen_ever", "rgod_happen_lives", "rpers_happen")))
 
 # recoding gender here to use in our reg
-d_interview$gender <- recode(d_interview$gender, 'Male' = 1, 'Female'=2)
-d_interview$control...6 <- recode(d_interview$control...6, 'Really Disagree' = 1, 'Disagree'=2, 'Kind of Disagree' = 3, 'Kind of Agree' = 4, 'Agree' = 5, 'Really Agree' = 6)
-d_interview$relig_attendserv <- recode(d_interview$relig_attendserv, 'Never' = 1, 'Less than once a year'=2, 'A few times a year' = 3, 'A few times a month' = 4, 'A few times a week' = 5, 'Daily' = 6)
-d_interview$relig_tradition <- recode(d_interview$relig_tradition, 'Not at all important' = 1, 'Minimally important'=2, 'Moderately important' = 3, 'Very important' = 4)
-d_interview$rgod_happen_earth <- recode(d_interview$rgod_happen_earth, 'No' = 1, 'Sometimes'=2, 'Yes' = 3, 'IDK' = 4)
-d_interview$rgod_happen_ever <- recode(d_interview$rgod_happen_ever, 'No' = 1, 'Sometimes'=2, 'Yes' = 3, 'IDK' = 4)
-d_interview$rgod_happen_lives <- recode(d_interview$rgod_happen_lives, 'No' = 1, 'Sometimes'=2, 'Yes' = 3, 'IDK' = 4)
-d_interview$rpers_happen <- recode(d_interview$rpers_happen, 'No' = 1, 'Sometimes'=2, 'Yes' = 3, 'IDK' = 4)
+d_interview$gender <- dplyr::recode(d_interview$gender, 'Male' = 1, 'Female'=2)
+d_interview$control...6 <- dplyr::recode(d_interview$control...6, 'Really Disagree' = 6, 'Disagree'=5, 'Kind of Disagree' = 4, 'Kind of Agree' = 3, 'Agree' = 2, 'Really Agree' = 1)
+d_interview$relig_attendserv <- dplyr::recode(d_interview$relig_attendserv, 'Never' = 1, 'Less than once a year'=2, 'A few times a year' = 3, 'A few times a month' = 4, 'A few times a week' = 5, 'Daily' = 6)
+d_interview$relig_tradition <- dplyr::recode(d_interview$relig_tradition, 'Not at all important' = 1, 'Minimally important'=2, 'Moderately important' = 3, 'Very important' = 4)
+d_interview$rgod_happen_earth <- dplyr::recode(d_interview$rgod_happen_earth, 'No' = 1, 'Sometimes'=2, 'Yes' = 3, 'IDK' = 4)
+d_interview$rgod_happen_ever <- dplyr::recode(d_interview$rgod_happen_ever, 'No' = 1, 'Sometimes'=2, 'Yes' = 3, 'IDK' = 4)
+d_interview$rgod_happen_lives <- dplyr::recode(d_interview$rgod_happen_lives, 'No' = 1, 'Sometimes'=2, 'Yes' = 3, 'IDK' = 4)
+d_interview$rpers_happen <- dplyr::recode(d_interview$rpers_happen, 'No' = 1, 'Sometimes'=2, 'Yes' = 3, 'IDK' = 4)
 
 
 d_interview$gender <- as.factor(d_interview$gender)
@@ -102,7 +102,13 @@ g_interviewage
 g_rgod_happen_earth
 g_rgod_happen_ever
 g_rgod_happen_lives
-g_rpers_happen
+
+g_rpers_happen 
+
+####################################
+# HL CHECK ADULTS RESPONSE TO PERSONAL INTERVENTION IN LIFE QUESTION X=CHILDS Y=PARENTS
+####################################
+
 ```
 
 ```{r visualizing interview score, items, and religiosity}
@@ -177,9 +183,12 @@ reg6 <- lm(interviewscore ~ age + gender + religiosity + control + religiosity*c
 summary(reg6)
 coef(reg6)
 
-anova(null_model, reg1, reg2, reg3, reg4, reg5, reg6)
-tab_model(null_model, reg1, reg2, reg3, reg4, reg5, reg6)
-AIC(null_model, reg1, reg2, reg3, reg4, reg5, reg6)
+anova(reg4, reg5, reg6)
+tab_model(reg6)
+AIC(reg4, reg5, reg6)
+
+######################
+# TRY AND MAKE THIS A FIGURE reg6
 
 ```
 

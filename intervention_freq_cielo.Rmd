@@ -60,10 +60,8 @@ d_fa1 <- d_fa %>%
     "always" = 4,
     "IDK" = 5)))
 
-View(d_fa1)
 
 d_fa1 <- na.omit(d_fa1)
-View(d_fa1)
 
 # Extract number of factors
 ev <- eigen(cor(d_fa1)) # get eigenvalues
@@ -124,10 +122,10 @@ d_intervention <- d_intervention %>%
     "IDK" = 5)))
 
 # recoding gender here to use in our reg
-d_intervention$gender <- recode(d_intervention$gender, 'Male' = 1, 'Female'=2)
-d_intervention$control...6 <- recode(d_intervention$control...6, 'Really Disagree' = 1, 'Disagree'=2, 'Kind of Disagree' = 3, 'Kind of Agree' = 4, 'Agree' = 5, 'Really Agree' = 6)
-d_intervention$relig_attendserv <- recode(d_intervention$relig_attendserv, 'Never' = 1, 'Less than once a year'=2, 'A few times a year' = 3, 'A few times a month' = 4, 'A few times a week' = 5, 'Daily' = 6)
-d_intervention$relig_tradition <- recode(d_intervention$relig_tradition, 'Not at all important' = 1, 'Minimally important'=2, 'Moderately important' = 3, 'Very important' = 4)
+d_intervention$gender <- dplyr::recode(d_intervention$gender, 'Male' = 1, 'Female'=2)
+d_intervention$control...6 <- dplyr::recode(d_intervention$control...6, 'Really Disagree' = 6, 'Disagree'=5, 'Kind of Disagree' = 4, 'Kind of Agree' = 3, 'Agree' = 2, 'Really Agree' = 1)
+d_intervention$relig_attendserv <- dplyr::recode(d_intervention$relig_attendserv, 'Never' = 1, 'Less than once a year'=2, 'A few times a year' = 3, 'A few times a month' = 4, 'A few times a week' = 5, 'Daily' = 6)
+d_intervention$relig_tradition <- dplyr::recode(d_intervention$relig_tradition, 'Not at all important' = 1, 'Minimally important'=2, 'Moderately important' = 3, 'Very important' = 4)
 
 
 
@@ -324,7 +322,7 @@ d_intervention2 <- d_intervention2 %>%
     "IDK" = 5)))
 
 # recoding gender here to use in our reg
-d_intervention2$gender <- recode(d_intervention2$gender, 'Male' = 1, 'Female'=2)
+d_intervention2$gender <- dplyr::recode(d_intervention2$gender, 'Male' = 1, 'Female'=2)
 
 d_intervention2$gender <- as.factor(d_intervention2$gender)
 
@@ -475,61 +473,7 @@ g_environment <- ggplot(d_intervention,aes(y=environment,x=age)) +
 # plotting our data without reg lines
 g_environment
 
-# You can make interactive plot easily with ggPredict() function included in #ggiraphExtra package. this is me just messing around.
-#library(ggiraphExtra)
-#require(ggiraph)
-#require(ggiraphExtra)
-#require(plyr)
-#ggPredict(reg1,se=TRUE,interactive=TRUE)
-#
-#reg1 <- lm(environment ~ age, data = d_intervention)
-#summary(reg1)
-#tab_model(null_model, reg1)
-#
-#g_environment1 <- ggplot(data=d_intervention, aes(x=age, y=environment)) +
-#  geom_bar(stat="identity", fill="purple")+
-#  theme_minimal()
-#
-#g_environment1
-#
-## need to add error bars to this figure
-#
-#reg2 <- lm(environment ~ age + gender, data = d_intervention)
-#summary(reg2)
-#tab_model(null_model, reg1, reg2)
-#
-##making the figure with reg2
-#equation1=function(x){coef(reg2)[2]*x+coef(reg2)[1]}
-#equation2=function(x){coef(reg2)[2]*x+coef(reg2)[1]+coef(reg2)[3]}
-#
-#g_environment2 <- ggplot(d_intervention,aes(y=environment,x=age,color=gender)) + 
-#        geom_point() +
-#        stat_function(fun=equation1,geom="line",color=scales::hue_pal()(2)[1]) +
-#        stat_function(fun=equation2,geom="line",color=scales::hue_pal()(2)[2]) +
-#        theme_minimal()
-#
-#g_environment2 <- g_environment2 + geom_jitter(aes(color = gender), width = 0.2, height #= 0.2)
-#
-#g_environment2 + labs(x = 'Age', y = 'God intervention score - Environment') + 
-#  scale_color_discrete(labels=c('Male', 'Female'))
-#
-##making the figure with reg3
-#equation1.1=function(x){coef(reg3)[2]*x+coef(reg3)[1]}
-#equation2.1=function(x){coef(reg3)[2]*x+coef(reg3)[1]+coef(reg3)[3]}
-#
-#g_environment2.1 <- ggplot(d_intervention,aes(y=environment,x=age,color=gender)) + 
-#        geom_point() +
-#        stat_function(fun=equation1.1,geom="line",color=scales::hue_pal()(2)[1]) +
-#        stat_function(fun=equation2.1,geom="line",color=scales::hue_pal()(2)[2]) +
-#        theme_minimal()
-#
-#g_environment2.1 <- g_environment2.1 + geom_jitter(aes(color = gender), width = 0.2, #height = 0.2)
-#
-#g_environment2.1 + labs(x = 'Age', y = 'God intervention score - Environment') + 
-#  scale_color_discrete(labels=c('Male', 'Female'))
-#
-######################
-## HL NEEDS TO MAKE THIS FIGURE FOR REG 5 CORRECTLY- DON'T THINK I DID IT RIGHT IN PREVIOUS TRIES...
+
 ```
 
 ## People intervention concepts only
@@ -549,11 +493,15 @@ reg2p <- lm(people ~ age + gender, data = d_intervention)
 summary(reg2p)
 tab_model(null_modelp, reg1p, reg2p)
 
-anova(null_modelp, reg1p, reg2p)
+reg3p <- lm(people ~ age + gender + control + religiosity + age*gender + age*control + gender*control + age*religiosity + gender*religiosity + control*religiosity, data = d_intervention)
 
-AIC(reg1p, reg2p)
+reg4p <- lm(people ~ age + gender + control + religiosity + age*control + gender*control, data = d_intervention)
 
-# we can see here that our second model is better (reg2)
+anova(null_modelp, reg1p, reg2p, reg3p, reg4p)
+AIC(reg1p, reg2p, reg3p, reg4p)
+
+
+tab_model(reg5, reg4p)
 
 ```
 
@@ -624,9 +572,17 @@ reg2t <- lm(totalinter ~ age + gender, data = d_intervention)
 summary(reg2t)
 tab_model(null_modelt, reg1t, reg2t)
 
-anova(null_modelt, reg1t, reg2t)
+reg3t <- lm(totalinter ~ age + gender + control + religiosity + age*gender + age*control + gender*control + age*religiosity + gender*religiosity + control*religiosity, data = d_intervention)
 
-AIC(reg1t, reg2t)
+reg4t <- lm(totalinter ~ age + gender + control + religiosity + age*control + gender*control, data = d_intervention)
+
+
+anova(reg4t)
+
+AIC(reg1t, reg2t, reg3t, reg4t)
+
+tab_model(reg5, reg4p, reg4t)
+
 
 # we can see here that our second model is better (reg2)
 

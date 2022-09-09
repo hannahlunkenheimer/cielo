@@ -41,8 +41,8 @@ subset(d_all, id_num != "129" & id_num != "152" & id_num != "175" & id_num != "2
 d_explicitconcepts <- d_all %>% dplyr::select(contains(c("age", "gender", "control...6", "relig_attendserv", "relig_tradition", "explicit_concepts")))
 
 # recoding gender here to use in our reg
-d_explicitconcepts$gender <- recode(d_explicitconcepts$gender, 'Male' = 1, 'Female'=2)
-d_explicitconcepts$control...6 <- recode(d_explicitconcepts$control...6, 'Really Disagree' = 1, 'Disagree'=2, 'Kind of Disagree' = 3, 'Kind of Agree' = 4, 'Agree' = 5, 'Really Agree' = 6)
+d_explicitconcepts$gender <- dplyr::recode(d_explicitconcepts$gender, 'Male' = 1, 'Female'=2)
+d_explicitconcepts$control...6 <- recode(d_explicitconcepts$control...6, 'Really Disagree' = 6, 'Disagree'=5, 'Kind of Disagree' = 4, 'Kind of Agree' = 3, 'Agree' = 2, 'Really Agree' = 1)
 d_explicitconcepts$relig_attendserv <- recode(d_explicitconcepts$relig_attendserv, 'Never' = 1, 'Less than once a year'=2, 'A few times a year' = 3, 'A few times a month' = 4, 'A few times a week' = 5, 'Daily' = 6)
 d_explicitconcepts$relig_tradition <- recode(d_explicitconcepts$relig_tradition, 'Not at all important' = 1, 'Minimally important'=2, 'Moderately important' = 3, 'Very important' = 4)
 
@@ -113,7 +113,7 @@ levels(d_explicit$explicit_concepts2)
 OIM <- multinom(explicit_concepts2 ~ 1, data = d_explicit)
 summary(OIM)
 
-multi_mo <- multinom(explicit_concepts2 ~ religiosity + gender + age, data = d_explicit,model=TRUE)
+multi_mo <- multinom(explicit_concepts2 ~ religiosity + control + age, data = d_explicit,model=TRUE)
 summary(multi_mo)
 
 # Check the Z-score for the model (wald Z)
@@ -136,7 +136,7 @@ chisq.test(d_explicit$explicit_concepts2,predict(multi_mo))
 # Use the lmtest package to run Likelihood Ratio Tests
 library(lmtest)
 lrtest(multi_mo, "religiosity") 
-lrtest(multi_mo, "gender") 
+lrtest(multi_mo, "control") 
 lrtest(multi_mo, "age") 
 
 # Let's check our model again
@@ -145,6 +145,7 @@ summary(multi_mo)
 # extract the coefficients from the model and exponentiate
 exp(coef(multi_mo))
 ```
+
 ```{r multinomial predicted model}
 # let's convert our data to tall format so we can include all of the same plots on the same figure
 library(reshape2)
@@ -159,7 +160,7 @@ relig <- plot(Effect("religiosity",multi_mo),multiline=T)
 
 relig
 
-plot(Effect("gender",multi_mo),multiline=T)
+plot(Effect("control",multi_mo),multiline=T)
 
 #shows multiple lines of predictions in the same plot
 plot(Effect("religiosity",multi_mo),style="stacked")

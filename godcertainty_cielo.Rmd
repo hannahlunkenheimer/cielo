@@ -1,0 +1,105 @@
+---
+title: "Age and God certainty"
+author: "Hannah Lunkenheimer"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(dev = "png",
+                      dpi = 300,
+                      echo = FALSE,
+                      cache = TRUE)
+
+library(moonBook)
+library(dplyr)
+library(readr)
+library(ggplot2)
+# importing the data
+d_all <- read_csv("data/Cielo1_MergedFull_practice.csv")
+
+# now let's view our data
+#View(d_all)
+
+# some participant data needs to be thrown out completely according to the red rows in our CSV file, so let's remove those participants completely here (ID 129, 152, 175, and 277)
+subset(d_all, id_num != "129" & id_num != "152" & id_num != "175" & id_num != "277")
+# great, we've removed our 4 participants completely from our dataframe d_all and now have all of the participants we can use for analyses
+
+```
+
+```{r age intervention factor sums}
+# so, from here, we'll use two factors and create average scores for them
+
+# creating our new dataframe
+d_certainty <- d_all %>% dplyr::select(contains(c("exist_sure_god", "age", "gender", "control...6", "relig_attendserv", "relig_tradition")))
+
+# recoding gender here to use in our reg
+d_certainty$gender <- dplyr::recode(d_certainty$gender, 'Male' = 1, 'Female'=2)
+d_certainty$control...6 <- dplyr::recode(d_certainty$control...6, 'Really Disagree' = 6, 'Disagree'=5, 'Kind of Disagree' = 4, 'Kind of Agree' = 3, 'Agree' = 2, 'Really Agree' = 1)
+d_certainty$relig_attendserv <- dplyr::recode(d_certainty$relig_attendserv, 'Never' = 1, 'Less than once a year'=2, 'A few times a year' = 3, 'A few times a month' = 4, 'A few times a week' = 5, 'Daily' = 6)
+d_certainty$relig_tradition <- dplyr::recode(d_certainty$relig_tradition, 'Not at all important' = 1, 'Minimally important'=2, 'Moderately important' = 3, 'Very important' = 4)
+#d_certainty$exist_sure_god <- recode(d_certainty$exist_sure_god, 'A little sure' = 1, 'Very sure' = 2)
+
+
+d_certainty$gender <- as.factor(d_certainty$gender)
+d_certainty$control <- as.numeric(d_certainty$control...6)
+d_certainty$relig_attendserv <- as.numeric(d_certainty$relig_attendserv)
+d_certainty$relig_tradition <- as.numeric(d_certainty$relig_tradition)
+d_certainty$exist_sure_god <- as.factor(d_certainty$exist_sure_god)
+
+#omitting NAs
+d_certainty <- na.omit(d_certainty)
+
+# creating sum scores for religiosity
+d_certainty$religiosity <- rowSums(d_certainty[, c(5, 6)]/2)
+
+```
+
+```{r dummy codes for certainty}
+# We cannot use categorical variables directly in the model. So for these variables, we need to create dummy variables. A dummy variable takes the value of 0 or 1 to indicate the absence or presence of a particular level. In our example, the function will automatically create dummy variables
+
+# Generating the frequency table
+table(d_certainty$exist_sure_god)
+
+cbPalette <- c("#56B4E9", "#009E73", "#F0E442")
+
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(scales)
+
+d_certainty %>%
+  group_by(age, exist_sure_god) %>%
+  summarise(n=n()) %>%
+  mutate(freq = n/sum(n))
+
+ggplot(d_certainty, aes(x = age, fill = exist_sure_god)) +
+  geom_bar(color = "white", binwidth = 1, position = "fill") +
+  theme_minimal() +
+    scale_fill_manual(values=cbPalette)+
+  labs(title="Figure 4. Children's certainty responses to God being real", x = "Age", y = "Proportion", fill = "Certainty")+
+  theme(legend.position="bottom")
+
+```
+
+```{r building our model}
+# Loading caret library
+require(caret)
+
+# Splitting the data into train and test
+index <- createDataPartition(d_certainty$exist_sure_god, p = .70, list = FALSE)
+train <- d_certainty[index, ]
+test <- d_certainty[-index, ]
+
+# Training the model
+logistic_model <- glm(exist_sure_god ~ ., family = binomial(), train)
+age_model <- glm(exist_sure_god ~ age, family = binomial(), train)
+# Checking the model
+summary(logistic_model)
+summary(age_model)
+
+# Predicting in the test dataset
+pred_prob <- predict(logistic_model, test, type = "response")
+pred_prob
+```
