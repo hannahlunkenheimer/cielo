@@ -214,9 +214,17 @@ g_rgod_happen_ever
 g_rgod_happen_lives
 g_controll
 
+g_rpers_happen <- ggplot(d_interview2,aes(y=rpers_happen,x=age, color=gender)) +
+  geom_point() +
+  geom_jitter() +
+  theme_minimal() +
+  geom_smooth(method='lm')+
+  scale_color_discrete(labels=c('Male', 'Female')) 
+
 g_rpers_happen + 
-    labs(title="Figure X. Figure X. Regression with control in model as predictor", x = "Age", y = "Total intervention score") +
-    scale_color_manual(values = cbPalette)
+    labs(title="Figure X. Regression with control in model as predictor", x = "Age", y = "Total intervention score") +
+    scale_color_manual('Gender', values = cbPalette, labels = c('Male', 'Female')) +
+    theme(legend.position="bottom")
 
 
 ####################################
@@ -305,32 +313,33 @@ rg_rpers_happen
 ```{r reg interviews}
 library(sjPlot)
 # we start by creating our null model with a fixed slope and no predictors
-null_model <- lm(interviewscore ~ 1, data = d_interview)
+null_model <- lm(interviewscore ~ 1, data = d_interview2)
 summary(null_model)
 coef(null_model)
 
-reg1 <- lm(interviewscore ~ age, data = d_interview)
+reg1 <- lm(interviewscore ~ age, data = d_interview2)
 summary(reg1)
 coef(reg1)
 
-reg2 <- lm(interviewscore ~ age + gender, data = d_interview)
+reg2 <- lm(interviewscore ~ age + gender, data = d_interview2)
 summary(reg2)
 coef(reg2)
 
-reg3 <- lm(interviewscore ~ age + gender + religiosity, data = d_interview)
+reg3 <- lm(interviewscore ~ age + gender + religiosity, data = d_interview2)
 summary(reg3)
+anova(reg3)
 coef(reg3)
 
-reg4 <- lm(interviewscore ~ age + gender + religiosity + control, data = d_interview)
+reg4 <- lm(interviewscore ~ age + gender + religiosity + control, data = d_interview2)
 summary(reg4)
 coef(reg4)
 
-reg5 <- lm(interviewscore ~ age + gender + religiosity + control + age*gender + age*religiosity + gender*religiosity + age*control + gender*control + religiosity*control, data = d_interview)
+reg5 <- lm(interviewscore ~ age + gender + religiosity + control + age*gender + age*religiosity + gender*religiosity + age*control + gender*control + religiosity*control, data = d_interview2)
 summary(reg5)
 coef(reg5)
 
 # i think this model is the best!
-reg6 <- lm(interviewscore ~ age + gender + religiosity + control + religiosity*control, data = d_interview)
+reg6 <- lm(interviewscore ~ age + gender + religiosity + control + religiosity*control, data = d_interview2)
 summary(reg6)
 anova(reg6)
 coef(reg6)
