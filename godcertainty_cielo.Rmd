@@ -16,6 +16,7 @@ library(moonBook)
 library(dplyr)
 library(readr)
 library(ggplot2)
+library(sjPlot)
 # importing the data
 d_all <- read_csv("data/Cielo1_MergedFull_practice.csv")
 

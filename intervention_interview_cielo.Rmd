@@ -62,82 +62,233 @@ d_interview <- d_interview[,-3]
 d_interview$religiosity <- rowSums(d_interview[, c(3, 4)]/2)
 d_interview$interviewscore <- rowSums(d_interview[, c(5, 6, 7, 8)]/4)
 
+#creating a filter to exclude IDK responses from analyses
+d_interview2 <- dplyr::filter(d_interview, rgod_happen_earth != 4) 
+d_interview2 <- dplyr::filter(d_interview2, rgod_happen_ever != 4) 
+d_interview2 <- dplyr::filter(d_interview2, rgod_happen_lives != 4) 
+d_interview2 <- dplyr::filter(d_interview2, rpers_happen != 4) 
+
 ```
 
+```{r bar graphs of proportions of intervention score questions}
+# creating our new dataframe
+d_interview4 <- d_all %>% dplyr::select(contains(c("age", "gender", "rgod_happen_earth", "rgod_happen_ever", "rgod_happen_lives", "rpers_happen")))
+
+# recoding gender here to use in our reg
+d_interview4$gender <- dplyr::recode(d_interview4$gender, 'Male' = 1, 'Female'=2)
+d_interview4$rgod_happen_earth <- dplyr::recode(d_interview4$rgod_happen_earth, 'No' = 1, 'Sometimes'=2, 'Yes' = 3, 'IDK' = 4)
+d_interview4$rgod_happen_ever <- dplyr::recode(d_interview4$rgod_happen_ever, 'No' = 1, 'Sometimes'=2, 'Yes' = 3, 'IDK' = 4)
+d_interview4$rgod_happen_lives <- dplyr::recode(d_interview4$rgod_happen_lives, 'No' = 1, 'Sometimes'=2, 'Yes' = 3, 'IDK' = 4)
+d_interview4$rpers_happen <- dplyr::recode(d_interview4$rpers_happen, 'No' = 1, 'Sometimes'=2, 'Yes' = 3, 'IDK' = 4)
+
+
+d_interview4$gender <- as.factor(d_interview4$gender)
+
+#omitting NAs
+d_interview4 <- na.omit(d_interview4)
+
+# creating sum scores for our 2 factors (environment and people)
+
+#creating a filter to exclude IDK responses from analyses
+#d_interview5 <- dplyr::filter(d_interview4, rgod_happen_earth != 4) 
+#d_interview5 <- dplyr::filter(d_interview5, rgod_happen_ever != 4) 
+#d_interview5 <- dplyr::filter(d_interview5, rgod_happen_lives != 4) 
+#d_interview5 <- dplyr::filter(d_interview5, rpers_happen != 4) 
+
+# let's convert our data to tall format so we can include all of the same plots on the same figure
+library(reshape2)
+d_interview5_reshaped <- melt(d_interview4, id.vars= c("age", "gender"))
+
+d_interview5_reshaped$value <- as.factor(d_interview5_reshaped$value)
+
+#let's view our tall data now
+View(d_interview5_reshaped)
+
+# here, i'm making a dataframe with frequency counts added in
+d_interview5_reshaped_counts <- table(d_interview5_reshaped$value, d_interview5_reshaped$variable, d_interview5_reshaped$gender)
+addmargins(d_interview5_reshaped_counts)
+round(prop.table(d_interview5_reshaped_counts,2)*100,digits=0)
+df_i5rc <- as.data.frame(d_interview5_reshaped_counts)
+
+# here, i'm making a dataframe with frequency counts added in
+# d_intervention_reshaped_counts <- table(d_intervention_reshaped$value, d_intervention_reshaped$variable, d_intervention_reshaped$gender)
+# addmargins(d_intervention_reshaped_counts)
+# round(prop.table(d_intervention_reshaped_counts,2)*100,digits=0)
+# df_irc <- as.data.frame(d_intervention_reshaped_counts)
+# View(df_irc)
+# creating our ggplot for all exist questions including both genders together. i'm labeling it p_exist because we're making a plot for the exist questions
+p_irc <- ggplot(data = d_interview5_reshaped, aes(x = variable, y = age, fill = value)) +
+       geom_bar(stat = "identity", width = .5) +
+      theme_classic() +
+      labs(title="Children's responses to God interventionist frequency questions", x ="Item", y = "Counts", fill = "Response") +
+      theme(axis.text.x = element_text(angle=90))
+
+# fixing the x axis labels
+p_irc <- p_irc + scale_fill_discrete(labels=c("1" = "No", "2" = "Sometimes", "3" = "Yes", "4" = "I don't know"))
+
+# faceting by gender
+# p_irc <- p_irc + facet_wrap(~Var3, ncol = 1) +
+#     theme(panel.spacing = unit(1, "lines"))
+
+p_irc
+
+```
+
+```{r intervention score x gender bar figure}
+
+# here, i'm making a dataframe with frequency counts added in
+d_interview_reshaped_counts <- table(d_interview5_reshaped$value, d_interview5_reshaped$variable, d_interview5_reshaped$gender)
+addmargins(d_interview_reshaped_counts)
+round(prop.table(d_interview_reshaped_counts,2)*100,digits=0)
+df_ivrc <- as.data.frame(d_interview_reshaped_counts)
+
+cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442")
+#Turn your 'treatment' column into a character vector
+df_ivrc$Var2 <- as.character(df_ivrc$Var2)
+#Then turn it back into a factor with the levels in the correct order
+df_ivrc$Var2 <- factor(df_ivrc$Var2, levels=c("rgod_happen_earth", "rgod_happen_ever", "rgod_happen_lives", "rpers_happen"))
+
+# creating our ggplot for all exist questions including both genders together. i'm labeling it p_exist because we're making a plot for the exist questions
+g_ivrc <- ggplot(data = df_ivrc, aes(x = Var2, y = Freq, fill = Var1)) +
+    scale_fill_manual(values=cbPalette, labels=c("1" = "No", "2" = "Sometimes", "3" = "Yes", "4" = "I don't know")) +
+       geom_bar(stat = "identity", width = .5) +
+      theme_classic() +
+      labs(title="Figure 1. Children's responses to God intervention questions", x = "Question", y = "Counts", fill = "Response") +
+      theme(axis.text.x = element_text(angle=01))
+
+#g_irc <- g_irc + scale_fill_discrete(labels=c("1" = "Never", "2" = "Only on special occasions", "3" = "Pretty #often", "4" = "Always", "5" = "I don't know"))
+
+
+# changing the label names
+g_ivrc <- g_ivrc + scale_x_discrete(labels=c("rgod_happen_earth" = "On earth", "rgod_happen_ever" = "Ever", "rgod_happen_lives" = "People's\nlives", "rpers_happen" = "Your\nlife" ))
+
+g_ivrc <- g_ivrc + theme(legend.position="bottom")
+
+g_ivrc
+
+
+```
 
 ```{r visualizing interview score, items, and age}
 
-g_interviewage <- ggplot(d_interview,aes(y=interviewscore,x=age, color=gender)) +
+g_interviewage <- ggplot(d_interview2,aes(y=interviewscore,x=age, color=gender)) +
   geom_point() +
   geom_jitter() +
   theme_minimal() +
   geom_smooth(method='lm') +
   scale_color_discrete(labels=c('Male', 'Female'))
-g_rgod_happen_earth <- ggplot(d_interview,aes(y=rgod_happen_earth,x=age, color=gender)) +
+g_rgod_happen_earth <- ggplot(d_interview2,aes(y=rgod_happen_earth,x=age, color=gender)) +
   geom_point() +
   geom_jitter() +
   theme_minimal() +
   geom_smooth(method='lm') +
   scale_color_discrete(labels=c('Male', 'Female'))
-g_rgod_happen_ever <- ggplot(d_interview,aes(y=rgod_happen_ever,x=age, color=gender)) +
+g_rgod_happen_ever <- ggplot(d_interview2,aes(y=rgod_happen_ever,x=age, color=gender)) +
   geom_point() +
   geom_jitter() +
   theme_minimal() +
   geom_smooth(method='lm')+
   scale_color_discrete(labels=c('Male', 'Female'))
-g_rgod_happen_lives <- ggplot(d_interview,aes(y=rgod_happen_lives,x=age, color=gender)) +
+g_rgod_happen_lives <- ggplot(d_interview2,aes(y=rgod_happen_lives,x=age, color=gender)) +
   geom_point() +
   geom_jitter() +
   theme_minimal() +
   geom_smooth(method='lm')+
   scale_color_discrete(labels=c('Male', 'Female'))
-g_rpers_happen <- ggplot(d_interview,aes(y=rpers_happen,x=age, color=gender)) +
+g_rpers_happen <- ggplot(d_interview2,aes(y=rpers_happen,x=age, color=gender)) +
   geom_point() +
   geom_jitter() +
   theme_minimal() +
   geom_smooth(method='lm')+
-  scale_color_discrete(labels=c('Male', 'Female'))
+  scale_color_discrete(labels=c('Male', 'Female')) 
+g_controll <- ggplot(d_interview2,aes(y=interviewscore,x=control, color=gender)) +
+  geom_point() +
+  geom_jitter() +
+  theme_minimal() +
+  geom_smooth(method='lm')+
+  scale_color_discrete(labels=c('Male', 'Female')) 
 
 g_interviewage
 g_rgod_happen_earth
 g_rgod_happen_ever
 g_rgod_happen_lives
+g_controll
 
-g_rpers_happen 
+g_rpers_happen + 
+    labs(title="Figure X. Figure X. Regression with control in model as predictor", x = "Age", y = "Total intervention score") +
+    scale_color_manual(values = cbPalette)
+
 
 ####################################
 # HL CHECK ADULTS RESPONSE TO PERSONAL INTERVENTION IN LIFE QUESTION X=CHILDS Y=PARENTS
 ####################################
+cbPalette <- c("#999999","#E69F00","#56B4E9","#009E73", "#F0E442","#0072B2","#D55E00","#CC79A7")
 
+g_rgodhappenall <- ggplot(d_interview2, aes(age,interviewscore)) + 
+  geom_jitter(height = .1, width = .1) +
+  geom_smooth(aes(age,control), color="56B4E9", method="lm",se=FALSE)
+  
+  #geom_smooth(aes(age,religiosity), color="#56B4E9", method="lm",se=FALSE)
+  #geom_smooth(aes(age,religiosity), color="#009E73", method="lm",se=FALSE)
+  #geom_smooth(aes(age,rpers_happen), color="#F0E442", method="lm",se=FALSE) +
+  #geom_smooth(aes(age,control), color="#0072B2", method="lm",se=FALSE)
+
+
+
+g_rgodhappenall <- g_rgodhappenall + theme_minimal() +
+  labs(title="Figure Y", x = "Age", y = "Total intervention score")
+
+g_rgodhappenall
+```
+
+
+```{r poster fig}
+
+g_poster <- ggplot(d_interview2, aes(age,religiosity)) + 
+  geom_jitter(color="#999999") +
+  geom_smooth(aes(age,rgod_happen_lives), color="black", method="lm",se=FALSE) +
+  geom_smooth(aes(age,rgod_happen_ever), color="#56B4E9", method="lm",se=FALSE) +
+  geom_smooth(aes(age,rgod_happen_earth), color="#009E73", method="lm",se=FALSE) +
+  geom_smooth(aes(age,rpers_happen), color="#F0E442", method="lm",se=FALSE) +
+  geom_smooth(aes(age,control), color="#0072B2", method="lm",se=FALSE)
+
+
+
+g_poster <- g_poster +
+   labs(title="Figure", fill = "Response") +
+  theme_minimal() +
+  labs(title="Figure X. Multiple predictors for total interview score", x = "Age", y = "Response", fill = "Interview score")
+
+g_poster
 ```
 
 ```{r visualizing interview score, items, and religiosity}
 
-rg_interview <- ggplot(d_interview,aes(y=interviewscore,x=religiosity, color=gender)) +
+rg_interview <- ggplot(d_interview2,aes(y=interviewscore,x=religiosity, color=gender)) +
   geom_point() +
   geom_jitter() +
   theme_minimal() +
   geom_smooth(method='lm')+
   scale_color_discrete(labels=c('Male', 'Female'))
-rg_rgod_happen_earth <- ggplot(d_interview,aes(y=rgod_happen_earth,x=religiosity, color=gender)) +
+rg_rgod_happen_earth <- ggplot(d_interview2,aes(y=rgod_happen_earth,x=religiosity, color=gender)) +
   geom_point() +
   geom_jitter() +
   theme_minimal() +
   geom_smooth(method='lm')+
   scale_color_discrete(labels=c('Male', 'Female'))
-rg_rgod_happen_ever <- ggplot(d_interview,aes(y=rgod_happen_ever,x=religiosity, color=gender)) +
+rg_rgod_happen_ever <- ggplot(d_interview2,aes(y=rgod_happen_ever,x=religiosity, color=gender)) +
   geom_point() +
   geom_jitter() +
   theme_minimal() +
   geom_smooth(method='lm')+
   scale_color_discrete(labels=c('Male', 'Female'))
-rg_rgod_happen_lives <- ggplot(d_interview,aes(y=rgod_happen_lives,x=religiosity, color=gender)) +
+rg_rgod_happen_lives <- ggplot(d_interview2,aes(y=rgod_happen_lives,x=religiosity, color=gender)) +
   geom_point() +
   geom_jitter() +
   theme_minimal() +
   geom_smooth(method='lm')+
   scale_color_discrete(labels=c('Male', 'Female'))
-rg_rpers_happen <- ggplot(d_interview,aes(y=rpers_happen,x=religiosity, color=gender)) +
+rg_rpers_happen <- ggplot(d_interview2,aes(y=rpers_happen,x=religiosity, color=gender)) +
   geom_point() +
   geom_jitter() +
   theme_minimal() +
@@ -181,10 +332,10 @@ coef(reg5)
 # i think this model is the best!
 reg6 <- lm(interviewscore ~ age + gender + religiosity + control + religiosity*control, data = d_interview)
 summary(reg6)
+anova(reg6)
 coef(reg6)
-
-anova(reg4, reg5, reg6)
 tab_model(reg6)
+
 AIC(reg4, reg5, reg6)
 
 ######################
@@ -194,8 +345,17 @@ AIC(reg4, reg5, reg6)
 
 ```{r reg plotted}
 
-# need to plot reg6 line to show predicted values
+# religiosity and control are not statistically correlated with eachother
+library("ggpubr")
+ggscatter(d_interview2, x = "religiosity", y = "control", 
+          add = "reg.line", conf.int = TRUE, 
+          cor.coef = TRUE, cor.method = "pearson",
+          xlab = "Religiosity", ylab = "Perceived control")
+
+shapiro.test(d_interview$religiosity)
+shapiro.test(d_interview$control)
+
+ggqqplot(d_interview$religiosity, ylab = "religiosity")
+
 ```
 
-
-```
