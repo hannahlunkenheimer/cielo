@@ -143,6 +143,8 @@ round(prop.table(d_interview_reshaped_counts,2)*100,digits=0)
 df_ivrc <- as.data.frame(d_interview_reshaped_counts)
 
 cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442")
+cbPalette2 <- c("#999999", "#E69F00", "#009E73", "#F0E442")
+
 #Turn your 'treatment' column into a character vector
 df_ivrc$Var2 <- as.character(df_ivrc$Var2)
 #Then turn it back into a factor with the levels in the correct order
@@ -150,7 +152,7 @@ df_ivrc$Var2 <- factor(df_ivrc$Var2, levels=c("rgod_happen_earth", "rgod_happen_
 
 # creating our ggplot for all exist questions including both genders together. i'm labeling it p_exist because we're making a plot for the exist questions
 g_ivrc <- ggplot(data = df_ivrc, aes(x = Var2, y = Freq, fill = Var1)) +
-    scale_fill_manual(values=cbPalette, labels=c("1" = "No", "2" = "Sometimes", "3" = "Yes", "4" = "I don't know")) +
+    scale_fill_manual(values=cbPalette2, labels=c("1" = "No", "2" = "Sometimes", "3" = "Yes", "4" = "I don't know")) +
        geom_bar(stat = "identity", width = .5) +
       theme_classic() +
       labs(title="Figure 1. Children's responses to God intervention questions", x = "Question", y = "Counts", fill = "Response") +
@@ -367,4 +369,25 @@ shapiro.test(d_interview$control)
 ggqqplot(d_interview$religiosity, ylab = "religiosity")
 
 ```
+```{r interaction plot}
+library(sjPlot)
+library(sjmisc)
+library(ggplot2)
 
+theme_set(theme_sjplot())
+
+# make categorical
+#efc$c161sex <- to_factor(efc$c161sex)
+
+# fit model with interaction
+interaction <- plot_model(reg6, type = "pred", colors = c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2"), terms = c("religiosity", "control"), axis.title = c("Religiosity", "Intervention score"), legend.title = "Perceived control", )
+
+interaction <- interaction + theme(legend.position="bottom")
+
+interaction <- interaction + guides(col = guide_legend(nrow=1))
+
+interaction
+
+#interaction + ggplot2::scale_fill_discrete(name = "Perceived control", labels = c("Low", "1", "2", "3", "4", "5", "High"))
+
+```

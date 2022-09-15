@@ -6,7 +6,14 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = FALSE)
+library(moonBook)
+library(dplyr)
+library(readr)
+
+# importing the data
+d_all <- read_csv("data/Cielo1_MergedFull_practice.csv")
+
 ```
 
 # Effects of age, religiosity, and control on interventionist concepts - child choice
@@ -17,13 +24,6 @@ i.	Effects of age (and religiosity*) (and control**) on interventionist concepts
 a.	Model with all 3 above (age, relig, control) + interactions = best fit model. Put all 3 parent variables into the model and take out if not predictive. Test for multicollinearity. If yes, then Principal Components Analysis.
 
 ```{r loading data, include=FALSE}
-
-library(moonBook)
-library(dplyr)
-library(readr)
-
-# importing the data
-d_all <- read_csv("data/Cielo1_MergedFull_practice.csv")
 
 # now let's view our data
 #View(d_all)
@@ -156,9 +156,11 @@ library(effects)
 plot(Effect("religiosity",multi_mo))
 
 #shows predictions with confidence bands
-relig <- plot(Effect("religiosity",multi_mo),multiline=T)
+relig <- plot(Effect("religiosity",multi_mo),multiline=T, xlab = "Religiosity", ylab= "Explicit concepts (probability)")
 
-relig
+relig + plot(x, y, main="title", sub="subtitle",
+  xlab="X-axis label", ylab="y-axix label",
+  xlim=c(xmin, xmax), ylim=c(ymin, ymax))
 
 plot(Effect("control",multi_mo),multiline=T)
 
