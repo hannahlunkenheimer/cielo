@@ -312,71 +312,6 @@ i_brave_plot
 i_safe_plot
 ```
 
-```{r interventions altogether x gender bar figure}
-
-d_intervention3 <- d_all %>% dplyr::select(starts_with("help_"), contains(c("helop_friends", "age", "gender")))
-
-# recoding intervention colomns 
-d_intervention3 <- d_intervention3 %>% 
-  mutate_at(vars(1:14),
-   ~as.numeric(dplyr::recode(.,
-    "Never"=1,
-    "Only at special times"=2,
-    "Pretty often"=3,
-    "Always"=4,
-    "always" = 4,
-    "IDK" = 5)))
-
-# recoding gender here to use in our reg
-d_intervention3$gender <- dplyr::recode(d_intervention3$gender, 'Male' = 1, 'Female'=2)
-
-d_intervention3$gender <- as.factor(d_intervention3$gender)
-
-#omitting NAs
-d_intervention3 <- na.omit(d_intervention3)
-
-#creating a filter to exclude IDK responses from analyses
-d_intervention3 <- dplyr::filter(d_intervention3, help_plants != 5 | help_love != 5) 
-d_intervention3 <- dplyr::filter(d_intervention3, help_love != 5) 
-
-# let's convert our data to tall format so we can include all of the same plots on the same figure
-library(reshape2)
-d_intervention_reshaped <- melt(d_intervention3, id.vars= c("age", "gender"))
-
-d_intervention_reshaped$value <- as.factor(d_intervention_reshaped$value)
-
-#let's view our tall data now
-View(d_intervention_reshaped)
-
-# here, i'm making a dataframe with frequency counts added in
-d_intervention_reshaped_counts <- table(d_intervention_reshaped$value, d_intervention_reshaped$variable, d_intervention_reshaped$gender)
-addmargins(d_intervention_reshaped_counts)
-round(prop.table(d_intervention_reshaped_counts,2)*100,digits=0)
-df_irc <- as.data.frame(d_intervention_reshaped_counts)
-
-# here, i'm making a dataframe with frequency counts added in
-# d_intervention_reshaped_counts <- table(d_intervention_reshaped$value, d_intervention_reshaped$variable, d_intervention_reshaped$gender)
-# addmargins(d_intervention_reshaped_counts)
-# round(prop.table(d_intervention_reshaped_counts,2)*100,digits=0)
-# df_irc <- as.data.frame(d_intervention_reshaped_counts)
-# View(df_irc)
-# creating our ggplot for all exist questions including both genders together. i'm labeling it p_exist because we're making a plot for the exist questions
-p_irc <- ggplot(data = d_intervention_reshaped, aes(x = variable, y = age, fill = value)) +
-       geom_bar(stat = "identity", width = .5) +
-      theme_classic() +
-      labs(title="Children's responses to God interventionist frequency questions", x ="Item", y = "Counts", fill = "Response") +
-      theme(axis.text.x = element_text(angle=90))
-
-# fixing the x axis labels
-p_irc <- p_irc + scale_fill_discrete(labels=c("1" = "Never", "2" = "Only on special occasions", "3" = "Pretty often", "4" = "Always", "5" = "I don't know"))
-
-# faceting by gender
-# p_irc <- p_irc + facet_wrap(~Var3, ncol = 1) +
-#     theme(panel.spacing = unit(1, "lines"))
-
-p_irc
-
-```
 
 ```{r intervention score x gender bar figure}
 
@@ -394,10 +329,10 @@ df_irc$Var2 <- factor(df_irc$Var2, levels=c("help_sun", "help_seasons", "help_pl
 
 # creating our ggplot for all exist questions including both genders together. i'm labeling it p_exist because we're making a plot for the exist questions
 g_irc <- ggplot(data = df_irc, aes(x = Var2, y = Freq, fill = Var1)) +
-    scale_fill_manual(values=cbPalette, labels=c("1" = "Never", "2" = "Only on special occasions", "3" = "Pretty often", "4" = "Always", "5" = "I don't know")) +
+    scale_fill_brewer(palette= "Paired", labels=c("1" = "Never", "2" = "Only on special occasions", "3" = "Pretty often", "4" = "Always", "5" = "I don't know")) +
        geom_bar(stat = "identity", width = .5) +
       theme_classic() +
-      labs(title="Figure 1. Children's responses to intervention frequency questions", x = "Question", y = "Counts", fill = "Response") +
+      labs(title="Children's responses to intervention frequency questions", x = "Question", y = "Counts", fill = "Response") +
       theme(axis.text.x = element_text(angle=01))
 
 #g_irc <- g_irc + scale_fill_discrete(labels=c("1" = "Never", "2" = "Only on special occasions", "3" = "Pretty #often", "4" = "Always", "5" = "I don't know"))
@@ -440,9 +375,10 @@ reg4 <- lm(environment ~ age + gender + control + religiosity + age*gender + age
 summary(reg4)
 tab_model(null_model, reg1, reg2, reg3, reg4)
 
-anova(null_model, reg1, reg2)
+reg5 <- lm(environment ~ age + gender + control + religiosity  + gender*control, data = d_intervention2)
+AIC(reg1, reg2, reg3, reg4, reg5)
+anova(reg1, reg2, reg3, reg4, reg5)
 
-AIC(reg1, reg2, reg3, reg4)
 ```
 
 ```{r environment intervention regs part2}
@@ -619,12 +555,91 @@ g_total
 
 #plotting regression lines on the same figure
 
-g_allinter <- ggplot(d_intervention2, aes(age,totalinter)) + 
-  geom_jitter(color="#999999") +
-  geom_smooth(aes(age,environment), color="#E69F00", method="lm",se=FALSE) +
-  geom_smooth(aes(age,people), color="#56B4E9", method="lm",se=FALSE) + 
-  geom_smooth(aes(age,totalinter), color="#009E73", method="lm",se=FALSE)
+#colors <- c("environment" = "#fdbf6f", "people" = "e2251d", "total" = "#fc9c9c")
 
+# how do i add a legend here!!!!!!!!!!!!!!!!!!!!!!!
+g_allinter <- ggplot(d_intervention2, aes(age,totalinter)) + 
+  geom_jitter(aes(age, environment), color = "#fdbf6f", width = .2, height = .2, alpha=.4) +
+  geom_smooth(aes(age,environment), color = "#fdbf6f", method = "lm", se = FALSE) +
+  geom_jitter(aes(age, people), color = "#e2251d", width = .2, height = .2, alpha=.4) +
+  geom_smooth(aes(age,people), color = "#e2251d", method = "lm", se = FALSE) + 
+  geom_jitter(aes(age, totalinter), color = "#fc9c9c", width = .2, height = .2, alpha=.4) +
+  geom_smooth(aes(age,totalinter), color = "#fc9c9c", method = "lm", se = FALSE) +
+  theme_minimal() +
+  labs(title="Children's responses to intervention frequency questions by domain cluster", x = "Age", y = "Counts", color = "Legend") +
+  theme(axis.text.x = element_text(angle=01)) 
+
+g_allinter 
+
+```
+
+```{r interventions altogether x gender bar figure}
+
+d_intervention3 <- d_all %>% dplyr::select(starts_with("help_"), contains(c("helop_friends", "age", "gender")))
+
+# recoding intervention colomns 
+d_intervention3 <- d_intervention3 %>% 
+  mutate_at(vars(1:14),
+   ~as.numeric(dplyr::recode(.,
+    "Never"=1,
+    "Only at special times"=2,
+    "Pretty often"=3,
+    "Always"=4,
+    "always" = 4,
+    "IDK" = 5)))
+
+# recoding gender here to use in our reg
+d_intervention3$gender <- dplyr::recode(d_intervention3$gender, 'Male' = 1, 'Female'=2)
+
+d_intervention3$gender <- as.factor(d_intervention3$gender)
+
+#omitting NAs
+d_intervention3 <- na.omit(d_intervention3)
+
+#creating a filter to exclude IDK responses from analyses
+d_intervention3 <- dplyr::filter(d_intervention3, help_plants != 5 | help_love != 5) 
+d_intervention3 <- dplyr::filter(d_intervention3, help_love != 5) 
+
+# let's convert our data to tall format so we can include all of the same plots on the same figure
+library(reshape2)
+d_intervention_reshaped <- melt(d_intervention3, id.vars= c("age", "gender"))
+
+d_intervention_reshaped$value <- as.factor(d_intervention_reshaped$value)
+
+#let's view our tall data now
+View(d_intervention_reshaped)
+
+# here, i'm making a dataframe with frequency counts added in
+d_intervention_reshaped_counts <- table(d_intervention_reshaped$value, d_intervention_reshaped$variable, d_intervention_reshaped$gender)
+addmargins(d_intervention_reshaped_counts)
+round(prop.table(d_intervention_reshaped_counts,2)*100,digits=0)
+df_irc <- as.data.frame(d_intervention_reshaped_counts)
+
+# here, i'm making a dataframe with frequency counts added in
+# d_intervention_reshaped_counts <- table(d_intervention_reshaped$value, d_intervention_reshaped$variable, d_intervention_reshaped$gender)
+# addmargins(d_intervention_reshaped_counts)
+# round(prop.table(d_intervention_reshaped_counts,2)*100,digits=0)
+# df_irc <- as.data.frame(d_intervention_reshaped_counts)
+# View(df_irc)
+# creating our ggplot for all exist questions including both genders together. i'm labeling it p_exist because we're making a plot for the exist questions
+p_irc <- ggplot(data = d_intervention_reshaped, aes(x = variable, y = age, fill = value)) +
+       geom_bar(stat = "identity", width = .5) +
+      theme_classic() +
+      labs(title="Children's responses to God interventionist frequency questions", x ="Item", y = "Counts", fill = "Response") +
+      theme(axis.text.x = element_text(angle=90))
+
+# fixing the x axis labels
+p_irc <- p_irc + scale_fill_discrete(labels=c("1" = "Never", "2" = "Only on special occasions", "3" = "Pretty often", "4" = "Always", "5" = "I don't know"))
+
+# faceting by gender
+# p_irc <- p_irc + facet_wrap(~Var3, ncol = 1) +
+#     theme(panel.spacing = unit(1, "lines"))
+
+p_irc
+
+```
+
+```{r something}
 g_allinter <- g_allinter +
    labs(title="Figure 2. Predicted probabilities of interventionist frequency concepts across childhood", x = "Age", y = "Intervention frequency score", fill = "Response") +
   theme_minimal()

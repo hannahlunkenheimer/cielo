@@ -152,7 +152,7 @@ df_ivrc$Var2 <- factor(df_ivrc$Var2, levels=c("rgod_happen_earth", "rgod_happen_
 
 # creating our ggplot for all exist questions including both genders together. i'm labeling it p_exist because we're making a plot for the exist questions
 g_ivrc <- ggplot(data = df_ivrc, aes(x = Var2, y = Freq, fill = Var1)) +
-    scale_fill_manual(values=cbPalette2, labels=c("1" = "No", "2" = "Sometimes", "3" = "Yes", "4" = "I don't know")) +
+    scale_fill_brewer(palette = "Paired", labels=c("1" = "No", "2" = "Sometimes", "3" = "Yes", "4" = "I don't know")) +
        geom_bar(stat = "identity", width = .5) +
       theme_classic() +
       labs(title="Figure 1. Children's responses to God intervention questions", x = "Question", y = "Counts", fill = "Response") +
@@ -380,14 +380,14 @@ theme_set(theme_sjplot())
 #efc$c161sex <- to_factor(efc$c161sex)
 
 # fit model with interaction
-interaction <- plot_model(reg6, type = "pred", colors = c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2"), terms = c("religiosity", "control"), axis.title = c("Religiosity", "Intervention score"), legend.title = "Perceived control", )
+interaction <- plot_model(reg6, type = "pred", colors = c("#a5cae0", "#1c6996", "#b2df8a", "#33a02b", "#fb9a99", "#e3211c"), terms = c("religiosity", "control"), axis.title = c("Religiosity", "Intervention score"), legend.title = "Perceived control", ) + theme_minimal()
 
 interaction <- interaction + theme(legend.position="bottom")
 
 interaction <- interaction + guides(col = guide_legend(nrow=1))
 
-interaction
+interaction 
 
-#interaction + ggplot2::scale_fill_discrete(name = "Perceived control", labels = c("Low", "1", "2", "3", "4", "5", "High"))
+interaction + ggplot2::scale_color_discrete(name = "Perceived control", labels = c("Low", "2", "3", "4", "5", "High"))
 
 ```

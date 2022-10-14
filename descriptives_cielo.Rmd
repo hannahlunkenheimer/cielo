@@ -138,14 +138,31 @@ p_exist <- ggplot(data = df_ec, aes(x = Var2, y = Freq, fill = Var1)) +
       theme(axis.text.x = element_text(angle=20))
 
 # fixing the x axis labels
-p_exist <- p_exist + scale_x_discrete(labels=c("exist_germs" = "Germs", "exist_tooth" = "Tooth \n Fairy", "exist_vitamins" = "Vitamins", "exist_merm" = "Mermaids", "exist_elf" = "Elves", "exist_fairy" = "Fairies", "exist_soul" = "Souls", "exist_god" = "God", "exist_santa" = "Santa"))
+p_exist <- p_exist + scale_x_discrete(labels=c("exist_germs" = "Germs", "exist_tooth" = "Tooth Fairy", "exist_vitamins" = "Vitamins", "exist_merm" = "Mermaids", "exist_elf" = "Elves", "exist_fairy" = "Fairies", "exist_soul" = "Souls", "exist_god" = "God", "exist_santa" = "Santa"))
 
 # faceting by gender
 p_exist <- p_exist + facet_wrap(~Var3, ncol = 1) +
     theme(panel.spacing = unit(1, "lines"))
 
-p_exist
+p_exist + coord_flip()
 
+# creating our ggplot for all exist questions including both genders together. i'm labeling it p_exist because we're making a plot for the exist questions
+p_exist2 <- ggplot(data = df_ec, aes(x = Var2, y = Freq, color = Var1)) +
+      geom_point(stat = "identity", width = .5) +
+      geom_jitter() +
+      geom_text(aes(label = Freq), position = position_stack(vjust = 0.5), color="black", size=3) +
+      theme_classic() +
+      labs(title="Children's responses to real or pretend questions", x ="Item", y = "Counts", fill = "Response") +
+      theme(axis.text.x = element_text(angle=20))
+
+# fixing the x axis labels
+p_exist2 <- p_exist2 + scale_x_discrete(labels=c("exist_germs" = "Germs", "exist_tooth" = "Tooth \n Fairy", "exist_vitamins" = "Vitamins", "exist_merm" = "Mermaids", "exist_elf" = "Elves", "exist_fairy" = "Fairies", "exist_soul" = "Souls", "exist_god" = "God", "exist_santa" = "Santa"))
+
+# faceting by gender
+p_exist2 <- p_exist2 + facet_wrap(~Var3, ncol = 1) +
+    theme(panel.spacing = unit(1, "lines")) 
+
+p_exist2
 ```
 
 ```{r exist x age bar figure}
@@ -178,10 +195,11 @@ p_exist2 <- ggplot(data = df_ec2, aes(x = Var2, y = Freq, fill = Var3)) +
         geom_text(aes(label = Freq), position = position_stack(vjust = 0.5), color="black", size=2) +
       theme_classic() +
       labs(title="Children's responses to real or pretend questions", x ="Item", y = "Counts", fill = "Age") +
-      theme(axis.text.x = element_text(angle=20))
+      theme(axis.text.x = element_text(angle=20)) +
+  coord_flip()
 
 # fixing the x axis labels
-p_exist2 <- p_exist2 + scale_x_discrete(labels=c("exist_germs" = "Germs", "exist_tooth" = "Tooth \n Fairy", "exist_vitamins" = "Vitamins", "exist_merm" = "Mermaids", "exist_elf" = "Elves", "exist_fairy" = "Fairies", "exist_soul" = "Souls", "exist_god" = "God", "exist_santa" = "Santa"))
+p_exist2 <- p_exist2 + scale_x_discrete(labels=c("exist_germs" = "Germs", "exist_tooth" = "Tooth Fairy", "exist_vitamins" = "Vitamins", "exist_merm" = "Mermaids", "exist_elf" = "Elves", "exist_fairy" = "Fairies", "exist_soul" = "Souls", "exist_god" = "God", "exist_santa" = "Santa"))
 
 # faceting by age
 p_exist2 <- p_exist2 + facet_wrap(~Var1, nrow=2) +
@@ -191,4 +209,18 @@ p_exist2
 
 ##############################################3
 ## HL try and stretch the facets (length) so the numbers are more clear & nice looking
+```
+
+```{r clustered bar chart for real/pretend questions}
+
+ggplot(data = df_ec2, aes(Var2, Freq)) + 
+  geom_bar(aes(fill = Var3), stat = "identity", position = "dodge") +
+      theme_minimal() +
+      labs(title="Children's responses to real or pretend questions", x ="Item", y = "Counts", fill = "Age") +
+      scale_x_discrete(labels=c("exist_germs" = "Germs", "exist_tooth" = "Tooth Fairy", "exist_vitamins" = "Vitamins", "exist_merm" = "Mermaids", "exist_elf" = "Elves", "exist_fairy" = "Fairies", "exist_soul" = "Souls", "exist_god" = "God", "exist_santa" = "Santa")) +
+    scale_fill_brewer(palette = "Paired") +
+  facet_wrap(~Var1, ncol = 1)
+  
+
+
 ```
