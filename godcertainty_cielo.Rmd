@@ -92,7 +92,7 @@ require(caret)
 index <- createDataPartition(d_certainty$exist_sure_god, p = .70, list = FALSE)
 train <- d_certainty[index, ]
 test <- d_certainty[-index, ]
-
+#note here to show ashley how it works
 # Training the model
 logistic_model <- glm(exist_sure_god ~ ., family = binomial(), train)
 age_model <- glm(exist_sure_god ~ age, family = binomial(), train)
