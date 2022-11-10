@@ -136,3 +136,8 @@ Also include here an analysis of what types of things kids think God does (inter
 2. Number and percent of each explanation type to assess whether we need to collapse categories – probably around 5 is ideal and we have more than that. Then collapse if we need to and calculate percentage of children’s responses in each category as a function of age and parent concepts/religiosity. Make graphs of these. 
 	a. logistic regression to assess effects of category type and interactions with age and religiosity (used this in W&C) – is dv proportion or number?
 	b. need to compute reliability (Cohen’s Kappa in SPSS)
+
+
+## Cielo 1 meteing 11/3/2022
+- Calculate reliability between Paola and Helen 60% or higher cohen's 
+- If IRR is low, then HL will need to code the data

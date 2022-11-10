@@ -41,9 +41,10 @@ d_all <- read_csv("data/Cielo1_MergedFull_practice.csv")
 #View(d_all)
 
 # some participant data needs to be thrown out completely according to the red rows in our CSV file, so let's remove those participants completely here (ID 129, 152, 175, and 277)
-subset(d_all, id_num != "129" & id_num != "152" & id_num != "175" & id_num != "277")
+d_all <- subset(d_all, id_num != "129" & id_num != "152" & id_num != "175" & id_num != "277")
 # great, we've removed our 4 participants completely from our dataframe d_all and now have all of the participants we can use for analyses
 ```
+
 ```{r exist forming subset data}
 
 # here, we're creating a new dataframe for a subset of our data that we want to look at (the exist questions)

@@ -29,6 +29,7 @@ library(dplyr)
 library(readr)
 library(ggplot2)
 library(sjPlot)
+library(reshape2)
 
 # importing the data
 d_all <- read_csv("data/Cielo1_MergedFull_practice.csv")
@@ -110,7 +111,7 @@ text(load2,labels=names(d_fa1),cex=.7) # add variable names
 # so, from here, we'll use two factors and create average scores for them
 
 # creating our new dataframe
-d_intervention <- d_all %>% dplyr::select(starts_with("help_"), contains(c("helop_friends", "age", "gender", "control...6", "relig_attendserv", "relig_tradition")))
+d_intervention <- d_all %>% dplyr::select(starts_with("help_"), contains(c("helop_friends", "age", "gender", "control...6", "relig_attendserv", "relig_tradition", "id_num")))
 
 # recoding intervention colomns 
 d_intervention <- d_intervention %>% 
@@ -140,7 +141,12 @@ d_intervention$relig_tradition <- as.numeric(d_intervention$relig_tradition)
 d_intervention <- na.omit(d_intervention)
 
 # creating sum scores for our 2 factors (environment and people)
-d_intervention$environment <- rowSums(d_intervention[,c(2, 3, 4)]/3)
+d_intervention$environment <- rowSums(d_intervention[,c(2, 3, 4)]/3) #plants, sun, seasons
+d_intervention$psych <- rowSums(d_intervention[,c(5, 6, 14)]/3) #friends, love, dreams
+d_intervention$health <- rowSums(d_intervention[,c(1, 7, 8, 13)]/4) #sick, safe, decide, find
+d_intervention$outcome <- rowSums(d_intervention[,c(9, 10, 11, 12)]/4) #job, sports, happy, brave
+d_intervention$wellbe <- rowSums(d_intervention[,c(1, 13, 11, 12)]/4) #job, sports, happy, brave
+
 d_intervention$people <- rowSums(d_intervention[,c(1, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14)]/11)
 d_intervention$totalinter <- rowSums(d_intervention[, c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14)]/14)
 d_intervention$religiosity <- rowSums(d_intervention[, c(18, 19)]/2)
@@ -344,7 +350,6 @@ g_irc <- g_irc + scale_x_discrete(labels=c("help_sick" = "Sick\npeople", "help_s
 g_irc <- g_irc + theme(legend.position="bottom")
 
 g_irc
-
 
 ```
 
@@ -675,5 +680,70 @@ g_allinter
 #g_total2.3 <- g_total2.2 + scale_color_discrete(labels=c('Male', 'Female'))
 #
 #g_total2.3
+
+```
+
+```{r comparing mean diffs between factors}
+#making the daataframe long
+longdata <- d_intervention2 %>% dplyr::select(starts_with("outcome"), starts_with("health"), starts_with("psych"), starts_with("environment"), starts_with("id_num")) 
+longdata <- melt(longdata, id.vars= c("id_num"))
+
+ggplot(data = longdata, mapping = aes(x = variable, y = value, color = variable)) + 
+  geom_boxplot() +
+  theme_minimal() +
+  scale_color_brewer(palette= "Paired") +
+  theme(legend.position = "none") +
+  labs(title = "Intervention Cluster Mean Scores")
+
+
+# Compute the analysis of variance
+anova1 <- aov(value ~ variable, data = longdata)
+# Summary of the analysis
+summary(anova1)
+TukeyHSD(anova1)
+
+```
+
+```{r correlation matrix for clusters}
+d_intervention2 <- d_intervention %>% dplyr::select(starts_with("help_"), contains(c("helop_friends")))
+
+d_intervention3 <- mutate_all(d_intervention2, function(d_intervention2) as.numeric(as.character(d_intervention2)))
+
+library(ggcorrplot)
+
+correlation_matrix <- round(cor(d_intervention3),1)
+corrp.mat <- cor_pmat(d_intervention3)
+ggcorrplot(correlation_matrix, method ="square",
+  hc.order = TRUE,
+  outline.color = "white",
+  type = "lower",
+  lab = TRUE,
+  insig = "blank",
+  colors = c("#ff7f00", "white", "#6a3d9a")) +
+  ggtitle("Correlation Matrix: All Intervention")
+
+
+```
+
+```{r correlation echo=FALSE}
+correlation_matrixbig3 <- round(cor(big3),1)
+corrp.matbig3 <- cor_pmat(big3)
+ggcorrplot(correlation_matrixbig3, method ="square", 
+  hc.order = TRUE,
+  outline.color = "white",
+  colors = c("#f0436e", "white", "#ff8200")) +
+  ggtitle("Correlations: Big Three and Coach Popovich") 
+
+correlation_matrixbig3j <- round(cor(big3j),1)
+corrp.matbig3j <- cor_pmat(big3j)
+ggcorrplot(correlation_matrixbig3j, method ="square", 
+  hc.order = TRUE,
+  outline.color = "white",
+  colors = c("#f0436e", "white", "#ff8200")) +
+  ggtitle("Correlations: Big Three, Murray, and Coach Popovich")
+
+```
+
+
 
 ```

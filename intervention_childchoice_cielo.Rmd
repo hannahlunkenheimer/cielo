@@ -10,6 +10,7 @@ knitr::opts_chunk$set(echo = FALSE)
 library(moonBook)
 library(dplyr)
 library(readr)
+library(ggplot2)
 
 # importing the data
 d_all <- read_csv("data/Cielo1_MergedFull_practice.csv")
@@ -105,7 +106,7 @@ library(jmv)
 
 # Load the multinom package
 library(nnet)
-# Since we are going to use Academic as the reference group, we need relevel the group.
+# Since we are going to use Jordan as the reference group, we need relevel the group.
 d_explicit$explicit_concepts2 <- relevel(as.factor(d_explicit$explicit_concepts), ref = "Jordan")
 #d_explicit$ses <- as.factor(d_explicit$ses)
 levels(d_explicit$explicit_concepts2)
@@ -142,6 +143,8 @@ lrtest(multi_mo, "age")
 # Let's check our model again
 summary(multi_mo)
 
+tab_model(multi_mo)
+
 # extract the coefficients from the model and exponentiate
 exp(coef(multi_mo))
 ```
@@ -150,7 +153,7 @@ exp(coef(multi_mo))
 # let's convert our data to tall format so we can include all of the same plots on the same figure
 library(reshape2)
 library(car)
-d_explicit_reshaped <- melt(d_explicit, id.vars= c("age", "explicit_concepts2"))
+d_explicit_reshaped <- melt(d_explicit, id.vars= c("age"))
 
 library(effects)
 plot(Effect("religiosity",multi_mo))
@@ -163,15 +166,28 @@ relig + plot(x, y, main="title", sub="subtitle",
   xlim=c(xmin, xmax), ylim=c(ymin, ymax))
 
 plot(Effect("control",multi_mo),multiline=T)
+plot(Effect("religiosity",multi_mo),multiline=T)
+plot(Effect("age",multi_mo),multiline=T)
 
+ggplot(d_explicitconcepts, aes(x=age, y=religiosity, color=explicit_concepts)) +
+  geom_smooth() +
+  theme_minimal() +
+  scale_color_brewer(palette="Paired")
+
+ggplot(d_explicitconcepts, aes(x=age, y=control, color=explicit_concepts)) +
+  geom_smooth() +
+  theme_minimal() +
+  scale_color_brewer(palette="Paired")
 #shows multiple lines of predictions in the same plot
-plot(Effect("religiosity",multi_mo),style="stacked")
+#plot(Effect("religiosity",multi_mo),style="stacked")
 # shows a stacked vertical bar chart of predictions
 
 ```
 
 ```{r ggplot effects modeling}
+effect_plot(model = multi_mo, pred = age)
 
+ggplot()
 ```
 
 

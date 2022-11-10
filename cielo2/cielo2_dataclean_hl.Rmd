@@ -1,0 +1,100 @@
+---
+title: "cielo2_datacleaning"
+author: "Hannah Lunkenheimer"
+date: "`r Sys.Date()`"
+output: html_document
+---
+# Cleaning Cielo 2 data
+
+## R Markdown Tips
+- Rmd means R Markdown. This is a type of file in R, and is the coolest one. 
+- Code chunks are the things in between the ```s
+- Adding #'s outside of code chunks lead to headings
+- Adding #'s inside of code chunks let's you leave notes
+- If you open up a file in R and notice that your environment is cluttered as hell, CLEAR IT! using the broom icon. 
+- Best practice is to notate quite literally everything you do. This will make your future self happy.
+- Establish a conventional chunk naming system that works for YOU
+- Use consistent dataframe and object labeling so you don't worker harder than you need to
+- Knitting is most useful (IMO) when you want to check any errors in your code, because you will not be able to knit if there is even 1 error in your code. Wow!
+- Remember the "Outline" button in the top right of your file widget/box. This helps toggle
+- Pressing control + option + shift + M on a mac allows you to edit the same text in a word chunk *just try it
+- Pressing control + option + down or up arrow on a mac allows you to edit multiple lines of text at a time *just try it
+- R is case sensitive
+- Email hL for literally any question you have and she'll help ya
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+#this is our setup chunk. this is where we can load all of the libraries that we'll need to run scripts in all of our other chunks. noice! this is usually the only thing hL includes in the setup chunk, unless we want to knit to an html, which then she'll add conditions to the opts_chunk$set bit above. don't worry about that for now. 
+
+# but what if i don't have any of these libraries and they don't run when i try to run them? that's ok, go to the right of your r widget/boxes and select the packages tab. then click install and type whichever library you need to install. libraries only need to be installed once, but need to be "called" as in library(soAndso) each time you open up an Rmd or Rscript file.
+
+# if you're like, "what the heck does any of this mean", then type your questions OUTSIDE of the chunk for hL to see. 
+
+#here, we're loading our libraries
+library(readr)
+library(ggplot2)
+library(dplyr)
+```
+
+```{r importing the data}
+# so we've loaded our libraries, now we need data to work with, DUH!
+# let's import our data. data MUST be imported as csv, not xlsx. if it's xlsx, fix that mess!
+
+# importing our data into a dataframe named "d_all". remember, hL does this for literally every imported dataset. keep a file/function naming system that works best for YOU. but remember to notate everything using the # sign at the beginning of sentences in chunks. 
+
+# importing our data
+d_all <- read_csv("data/Cielo1_MergedFull_practice.csv")
+
+#now, let's view our data to make sure we didn't just delete half of the responses for no good reason
+View(d_all)
+
+#phew, everything looks like it's there. now, let's clean the dataframe. hL, WTF is a dataframe? think of dataframes as excel sheets with rows and columns that's all it is, really. 
+```
+
+```{r cleaning the data}
+#now, let's clean our data! when hL does this, she uses the View(d_all) command in her CONSOLE after every step so she makes sure she doesn't royally mess anything up. Why not include this in the code chunks? Well, anything in your Rmd file will save for the next time. If we've checked that our cleaning is good in our file, we don't need to View our dataframe to check that 20 times. If we have View(d_all) in our code chunk 20 times, it'll be annoying when you run the entire chunk or file. Trust me. Use View(d_all) in your console instead.
+
+#####################################################################################
+# getting rid of participants that do not meet our explicit criteria for inclusion  #
+#####################################################################################
+
+# the line below says, from our d_all dataframe, let's pull the column d_all$godreal. and for rows that equal Pretend in that column, get rid of em! and we're relabeling the dataframe as d_all, meaning, i'm writing over the previous d_all dataframe after this change. some people rename the dataframe to something like d_all2, but hL is lazy, so she renames it as d_all.
+
+
+d_all<-d_all[!(d_all$godreal=="Pretend"),]
+
+# now we want to view our dataframe in the console to make sure we removed the right participants. great!
+
+# let's remove individual participants now because their parents coached them through the interview or they left the experiment because they had to go to the bathroom IMMEDIATELY. we do that by using the subset function and removing the values where the column number (in this case, id_num) equals whatever value. So, let's say we know that participants with IDs 134, 27, and 98 need to be removed, how do we do that?
+subset(d_all, id_num != "129" & id_num != "152" & id_num != "175" & id_num != "277")
+```
+
+```{r creating a subset of the data}
+
+# here, we're creating a new dataframe for a subset of our data that we want to look at (the exist questions)
+# it's good to create subsets of our dataframe so that if we mess up it is minor instead of major. what does this mean? well, let's say we want to analyze the germs exist etc stuff with perceived control. well, making a smalller subset of just these items may be helpful when we're trying to manipulate and analyze the data. 
+
+d_exist <- dplyr::select(d_all, gender, exist_germs, exist_tooth, exist_vitamins, exist_merm, exist_elf, exist_fairy,
+                         exist_soul, exist_god, exist_santa, exist_elf, contains("id_num"))
+
+# see that dpylr::select() bit above? this is saying "hey R, in the dplyr library that i've already called, please use the select function to this this thing. sometimes when we load multiple packages, certain functions are masked in a package and we need to specify functions within a package (the select function in the dplyr package). the :: just means "pull from this package." 
+
+# remember, write down your questions OUTSIDE OF THE CHUNK for hL
+
+# here, we're rewriting over the dataframe d_exist that we just created above and essentially getting rid of the 1 participant that selected gender as "other" in the previous dataframe 
+
+d_exist<-subset(d_exist, gender!="Other")
+
+```
+
+```{r creating descriptive tables}
+
+# if you're feeling craysee, try and make a table
+
+existgerms_plot <- ggplot(d_exist, aes(exist_germs)) +
+  geom_bar(fill='light blue') +
+  labs(x='Scale', y="Participants", title ="Are germs real?") +
+  theme_light()
+
+```
