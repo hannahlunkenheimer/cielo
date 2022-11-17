@@ -565,11 +565,11 @@ g_total
 # how do i add a legend here!!!!!!!!!!!!!!!!!!!!!!!
 g_allinter <- ggplot(d_intervention2, aes(age,totalinter)) + 
   geom_jitter(aes(age, environment), color = "#fdbf6f", width = .2, height = .2, alpha=.4) +
-  geom_smooth(aes(age,environment), color = "#fdbf6f", method = "lm", se = FALSE) +
+  geom_smooth(aes(age,environment), color = "#fdbf6f", method = "glm", se = FALSE) +
   geom_jitter(aes(age, people), color = "#e2251d", width = .2, height = .2, alpha=.4) +
-  geom_smooth(aes(age,people), color = "#e2251d", method = "lm", se = FALSE) + 
+  geom_smooth(aes(age,people), color = "#e2251d", method = "glm", se = FALSE) + 
   geom_jitter(aes(age, totalinter), color = "#fc9c9c", width = .2, height = .2, alpha=.4) +
-  geom_smooth(aes(age,totalinter), color = "#fc9c9c", method = "lm", se = FALSE) +
+  geom_smooth(aes(age,totalinter), color = "#fc9c9c", method = "glm", se = FALSE) +
   theme_minimal() +
   labs(title="Children's responses to intervention frequency questions by domain cluster", x = "Age", y = "Counts", color = "Legend") +
   theme(axis.text.x = element_text(angle=01)) 
@@ -724,26 +724,6 @@ ggcorrplot(correlation_matrix, method ="square",
 
 
 ```
-
-```{r correlation echo=FALSE}
-correlation_matrixbig3 <- round(cor(big3),1)
-corrp.matbig3 <- cor_pmat(big3)
-ggcorrplot(correlation_matrixbig3, method ="square", 
-  hc.order = TRUE,
-  outline.color = "white",
-  colors = c("#f0436e", "white", "#ff8200")) +
-  ggtitle("Correlations: Big Three and Coach Popovich") 
-
-correlation_matrixbig3j <- round(cor(big3j),1)
-corrp.matbig3j <- cor_pmat(big3j)
-ggcorrplot(correlation_matrixbig3j, method ="square", 
-  hc.order = TRUE,
-  outline.color = "white",
-  colors = c("#f0436e", "white", "#ff8200")) +
-  ggtitle("Correlations: Big Three, Murray, and Coach Popovich")
-
-```
-
 
 
 ```
