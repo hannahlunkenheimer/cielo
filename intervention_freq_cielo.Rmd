@@ -73,6 +73,9 @@ ev <- eigen(cor(d_fa1)) # get eigenvalues
 #plotnScree(nS)
 
 ## Exploratory Factor analysis, testing with 3 factors and 2 factors to start, using varimax rotation for all
+fact5 <- factanal(d_fa1, 5, rotation="varimax") 
+print(fact5, digits=2, cutoff=.3, sort=TRUE)
+
 fact4 <- factanal(d_fa1, 4, rotation="varimax") 
 print(fact4, digits=2, cutoff=.3, sort=TRUE)
 
@@ -100,9 +103,9 @@ load3 <- fact3$loadings[,1:3]
 plot(load3,type="n") # set up plot
 text(load3,labels=names(d_fa1),cex=.7) # add variable names
 
-load2 <- fact2$loadings[,1:2]
-plot(load2,type="n") # set up plot
-text(load2,labels=names(d_fa1),cex=.7) # add variable names
+load5 <- fact5$loadings[,1:5]
+plot(load5,type="n") # set up plot
+text(load5,labels=names(d_fa1),cex=.7) # add variable names
 
 # i can see here that we have two distinct groups (i prefer 2 factors to 3) where the first factor loads seasons, sun, and plants (nature/environment) and the second factor loads god's intervening with people (not the environment)
 ```
@@ -142,10 +145,10 @@ d_intervention <- na.omit(d_intervention)
 
 # creating sum scores for our 2 factors (environment and people)
 d_intervention$environment <- rowSums(d_intervention[,c(2, 3, 4)]/3) #plants, sun, seasons
-d_intervention$psych <- rowSums(d_intervention[,c(5, 6, 14)]/3) #friends, love, dreams
-d_intervention$health <- rowSums(d_intervention[,c(1, 7, 8, 13)]/4) #sick, safe, decide, find
-d_intervention$outcome <- rowSums(d_intervention[,c(9, 10, 11, 12)]/4) #job, sports, happy, brave
-d_intervention$wellbe <- rowSums(d_intervention[,c(1, 13, 11, 12)]/4) #job, sports, happy, brave
+d_intervention$psych <- rowSums(d_intervention[,c(6, 8, 11, 12)]/4) #dreams, happy, brave decisions
+d_intervention$health <- rowSums(d_intervention[,c(1, 13)]/2) #sick, safe
+d_intervention$outcome <- rowSums(d_intervention[,c(7, 9, 10)]/3) #job, sports, find
+d_intervention$social <- rowSums(d_intervention[,c(5, 14)]/2) #love, friends
 
 d_intervention$people <- rowSums(d_intervention[,c(1, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14)]/11)
 d_intervention$totalinter <- rowSums(d_intervention[, c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14)]/14)
@@ -685,7 +688,7 @@ g_allinter
 
 ```{r comparing mean diffs between factors}
 #making the daataframe long
-longdata <- d_intervention2 %>% dplyr::select(starts_with("outcome"), starts_with("health"), starts_with("psych"), starts_with("environment"), starts_with("id_num")) 
+longdata <- d_intervention2 %>% dplyr::select(starts_with("outcome"), starts_with("health"), starts_with("psych"), starts_with("social"), starts_with("environment"), starts_with("id_num")) 
 longdata <- melt(longdata, id.vars= c("id_num"))
 
 ggplot(data = longdata, mapping = aes(x = variable, y = value, color = variable)) + 
@@ -705,23 +708,22 @@ TukeyHSD(anova1)
 ```
 
 ```{r correlation matrix for clusters}
-d_intervention2 <- d_intervention %>% dplyr::select(starts_with("help_"), contains(c("helop_friends")))
-
-d_intervention3 <- mutate_all(d_intervention2, function(d_intervention2) as.numeric(as.character(d_intervention2)))
-
-library(ggcorrplot)
-
-correlation_matrix <- round(cor(d_intervention3),1)
-corrp.mat <- cor_pmat(d_intervention3)
-ggcorrplot(correlation_matrix, method ="square",
-  hc.order = TRUE,
-  outline.color = "white",
-  type = "lower",
-  lab = TRUE,
-  insig = "blank",
-  colors = c("#ff7f00", "white", "#6a3d9a")) +
-  ggtitle("Correlation Matrix: All Intervention")
-
+#d_intervention2 <- d_intervention %>% dplyr::select(starts_with("help_"), contains(c("helop_friends")))
+#
+#d_intervention3 <- mutate_all(d_intervention2, function(d_intervention2) as.numeric(as.character(d_intervention2)))
+#
+#library(ggcorrplot)
+#
+#correlation_matrix <- round(cor(d_intervention3),1)
+#corrp.mat <- cor_pmat(d_intervention3)
+#ggcorrplot(correlation_matrix, method ="square",
+#  hc.order = TRUE,
+#  outline.color = "white",
+#  type = "lower",
+#  lab = TRUE,
+#  insig = "blank",
+#  colors = c("#ff7f00", "white", "#6a3d9a")) +
+#  ggtitle("Correlation Matrix: All Intervention")
 
 ```
 

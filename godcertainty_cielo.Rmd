@@ -30,7 +30,7 @@ subset(d_all, id_num != "129" & id_num != "152" & id_num != "175" & id_num != "2
 ```
 
 ```{r age intervention factor sums}
-# so, from here, we'll use two factors and create average scores for them
+# so, from here, we'll use two variables and create average scores for them
 
 # creating our new dataframe
 d_certainty <- d_all %>% dplyr::select(contains(c("exist_sure_god", "age", "gender", "control...6", "relig_attendserv", "relig_tradition")))

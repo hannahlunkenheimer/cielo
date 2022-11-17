@@ -129,7 +129,7 @@ d_exist_counts <- table(d_exist$value, d_exist$variable, d_exist$gender)
 addmargins(d_exist_counts)
 round(prop.table(d_exist_counts,2)*100,digits=0)
 df_ec <- as.data.frame(d_exist_counts)
-
+df_ec
 # creating our ggplot for all exist questions including both genders together. i'm labeling it p_exist because we're making a plot for the exist questions
 p_exist <- ggplot(data = df_ec, aes(x = Var2, y = Freq, fill = Var1)) +
        geom_bar(stat = "identity", width = .5) +
@@ -221,7 +221,5 @@ ggplot(data = df_ec2, aes(Var2, Freq)) +
       scale_x_discrete(labels=c("exist_germs" = "Germs", "exist_tooth" = "Tooth Fairy", "exist_vitamins" = "Vitamins", "exist_merm" = "Mermaids", "exist_elf" = "Elves", "exist_fairy" = "Fairies", "exist_soul" = "Souls", "exist_god" = "God", "exist_santa" = "Santa")) +
     scale_fill_brewer(palette = "Paired") +
   facet_wrap(~Var1, ncol = 1)
-  
-
 
 ```
