@@ -1,0 +1,307 @@
+---
+title: "spp_analyses_cielo"
+author: "Hannah Lunkenheimer"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(dev = "png",
+                      dpi = 300,
+                      echo = FALSE,
+                      cache = TRUE)
+
+library(moonBook)
+library(dplyr)
+library(readr)
+library(ggplot2)
+library(sjPlot)
+# importing the data
+d_all <- read_csv("data/Cielo1_MergedFull_practice.csv")
+
+# now let's view our data
+#View(d_all)
+
+# some participant data needs to be thrown out completely according to the red rows in our CSV file, so let's remove those participants completely here (ID 129, 152, 175, and 277)
+d_all <- subset(d_all, id_num != "129" & id_num != "152" & id_num != "175" & id_num != "277")
+# great, we've removed our 4 participants completely from our dataframe d_all and now have all of the participants we can use for analyses
+
+d_open <- read_csv("HelenCoding.Cielo.final.csv")
+d_open <- subset(d_open, pid1 != "1")
+
+```
+
+```{r age intervention factor sums}
+# so, from here, we'll use two factors and create average scores for them
+
+# creating our new dataframe
+d_intervention <- d_all %>% dplyr::select(starts_with("help_"), contains(c("helop_friends", "age", "gender", "control...6", "relig_attendserv", "relig_tradition", "id_num")))
+
+# recoding intervention colomns 
+d_intervention <- d_intervention %>% 
+  mutate_at(vars(1:14),
+   ~as.numeric(dplyr::recode(.,
+    "Never"=1,
+    "Only at special times"=2,
+    "Pretty often"=3,
+    "Always"=4,
+    "always" = 4,
+    "IDK" = 5)))
+
+# recoding gender here to use in our reg
+d_intervention$gender <- dplyr::recode(d_intervention$gender, 'Male' = 1, 'Female'=2)
+d_intervention$control...6 <- dplyr::recode(d_intervention$control...6, 'Really Disagree' = 6, 'Disagree'=5, 'Kind of Disagree' = 4, 'Kind of Agree' = 3, 'Agree' = 2, 'Really Agree' = 1)
+d_intervention$relig_attendserv <- dplyr::recode(d_intervention$relig_attendserv, 'Never' = 1, 'Less than once a year'=2, 'A few times a year' = 3, 'A few times a month' = 4, 'A few times a week' = 5, 'Daily' = 6)
+d_intervention$relig_tradition <- dplyr::recode(d_intervention$relig_tradition, 'Not at all important' = 1, 'Minimally important'=2, 'Moderately important' = 3, 'Very important' = 4)
+
+
+
+d_intervention$gender <- as.factor(d_intervention$gender)
+d_intervention$control <- as.numeric(d_intervention$control...6)
+d_intervention$relig_attendserv <- as.numeric(d_intervention$relig_attendserv)
+d_intervention$relig_tradition <- as.numeric(d_intervention$relig_tradition)
+
+#omitting NAs
+d_intervention <- na.omit(d_intervention)
+
+# creating sum scores for our 2 factors (environment and people)
+d_intervention$environment <- rowSums(d_intervention[,c(2, 3, 4)]/3) #plants, sun, seasons
+d_intervention$psych <- rowSums(d_intervention[,c(6, 8, 11, 12)]/4) #dreams, happy, brave decisions
+d_intervention$health <- rowSums(d_intervention[,c(1, 13)]/2) #sick, safe
+d_intervention$outcome <- rowSums(d_intervention[,c(7, 9, 10)]/3) #job, sports, find
+d_intervention$social <- rowSums(d_intervention[,c(5, 14)]/2) #love, friends
+
+d_intervention$people <- rowSums(d_intervention[,c(1, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14)]/11)
+d_intervention$totalinter <- rowSums(d_intervention[, c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14)]/14)
+d_intervention$religiosity <- rowSums(d_intervention[, c(18, 19)]/2)
+
+#creating a filter to exclude IDK responses from analyses
+d_intervention2 <- dplyr::filter(d_intervention, help_plants != 5 | help_love != 5) 
+d_intervention2 <- dplyr::filter(d_intervention2, help_love != 5) 
+
+
+```
+
+```{r know and age table df}
+# here, we're creating a new dataframe for a subset of our data that we want to look at (the exist questions)
+d_know <- dplyr::select(d_open, age, contains("pid1"), know_location, know_properties, know_action_creation, know_action_intervention, know_action_other)
+
+# let's convert our data to tall format so we can include all of the same plots on the same figure
+library(reshape2)
+d_know2 <- melt(d_know, id.vars= c("pid1", "age"))
+
+
+# here, i'm making a dataframe with frequency counts added in
+d_know_counts2 <- table(d_know2$value, d_know2$variable, d_know2$age)
+#d_exist_counts2 <- round(prop.table(d_exist_counts2,2)*100,digits=0)
+
+df_kc <- as.data.frame(d_know_counts2)
+
+```
+
+```{r know and age bar graph}
+##JW, DO WE WANT TO GROUP THE ACTION_ ITEMS TOGETHER, OR KEEP THEM SEPARATE?
+ggplot(data = df_kc, aes(Var2, Freq)) + 
+  geom_bar(aes(fill = Var3), stat = "identity", position = "dodge") +
+      theme_minimal() +
+      labs(title="Children's responses to ``Tell me what you know about God``", x ="Item", y = "Counts", fill = "Age") +
+    scale_fill_brewer(palette = "Paired") +
+  scale_x_discrete(labels=c("know_location" = "Location", "know_properties" = "Properties", "know_action_creation" = "Creation", "know_action_intervention" = "Intervention", "know_action_other" = "Other", "know_idk" = "IDK", "know_uncodable" = "Uncoded")) 
+```
+
+```{r know box plot and sig diffs}
+
+# here, we're creating a new dataframe for a subset of our data that we want to look at (the exist questions)
+d_know3 <- dplyr::select(d_open, know_location, know_properties, know_action_creation, know_action_intervention, know_action_other, contains("pid1"))
+
+# let's convert our data to tall format so we can include all of the same plots on the same figure
+library(reshape2)
+d_know4 <- melt(d_know3, id.vars= c("pid1"))
+
+
+# here, i'm making a dataframe with frequency counts added in
+#d_know_counts2 <- table(d_know2$value, d_know2$variable, d_know2$age)
+#d_exist_counts2 <- addmargins(d_exist_counts2)
+#d_exist_counts2 <- round(prop.table(d_exist_counts2,2)*100,digits=0)
+
+#df_kc <- as.data.frame(d_know_counts2)
+
+ggplot(data = d_know4, mapping = aes(x = variable, y = value, color = variable)) + 
+  geom_boxplot() +
+  theme_minimal() +
+  scale_color_brewer(palette= "Paired") +
+  theme(legend.position = "none") +
+  labs(title = "Intervention Cluster Mean Scores")
+```
+
+```{r anova for know}
+
+# Compute the analysis of variance
+anova_know <- aov(value ~ variable, data = d_know4)
+# Summary of the analysis
+summary(anova_know)
+TukeyHSD(anova_know)
+
+```
+
+```{r inter and age table df}
+# here, we're creating a new dataframe for a subset of our data that we want to look at (the exist questions)
+d_inter <- dplyr::select(d_open, age, contains("pid1"), inter_ppl_prayers, inter_ppl_miracles, inter_ppl_healing, inter_ppl_helping, inter_ppl_control, inter_ppl_moral, inter_ppl_judgement, inter_ture)
+
+# let's convert our data to tall format so we can include all of the same plots on the same figure
+library(reshape2)
+d_inter2 <- melt(d_inter, id.vars= c("pid1", "age"))
+
+
+# here, i'm making a dataframe with frequency counts added in
+d_inter_counts2 <- table(d_inter2$value, d_inter2$variable, d_inter2$age)
+#d_exist_counts2 <- round(prop.table(d_exist_counts2,2)*100,digits=0)
+
+df_ic <- as.data.frame(d_inter_counts2)
+
+```
+
+```{r inter and age bar graph}
+ggplot(data = df_ic, aes(Var2, Freq)) + 
+  geom_bar(aes(fill = Var3), stat = "identity", position = "dodge") +
+      theme_minimal() +
+      labs(title="Children's responses to ``What does god do?``", x ="Item", y = "Counts", fill = "Age") +
+    scale_fill_brewer(palette = "Paired") +
+  scale_x_discrete(labels=c("inter_ppl_prayers" = "Answer prayers", "inter_ppl_miracles" = "Miracles", "inter_ppl_healing" = "Heals", "inter_ppl_helping" = "Helps", "inter_ppl_control" = "Controls", "inter_ppl_moral" = "Morals", "inter_ppl_judgement" = "Judgement", "inter_ture" = "Nature")) 
+```
+
+```{r inter box plot and sig diffs}
+
+# here, we're creating a new dataframe for a subset of our data that we want to look at (the exist questions)
+d_inter3 <- dplyr::select(d_open, inter_ppl_prayers, inter_ppl_miracles, inter_ppl_healing, inter_ppl_helping, inter_ppl_control, inter_ppl_moral, inter_ppl_judgement, contains("pid1"))
+
+# let's convert our data to tall format so we can include all of the same plots on the same figure
+library(reshape2)
+d_inter4 <- melt(d_inter3, id.vars= c("pid1"))
+
+
+# here, i'm making a dataframe with frequency counts added in
+#d_know_counts2 <- table(d_know2$value, d_know2$variable, d_know2$age)
+#d_exist_counts2 <- addmargins(d_exist_counts2)
+#d_exist_counts2 <- round(prop.table(d_exist_counts2,2)*100,digits=0)
+
+```
+
+```{r anova for inter}
+
+# Compute the analysis of variance
+anova_inter <- aov(value ~ variable, data = d_inter4)
+# Summary of the analysis
+summary(anova_inter)
+TukeyHSD(anova_inter)
+
+```
+
+```{r does god make things happen on his own or when ppl ask}
+# here, we're creating a new dataframe for a subset of our data that we want to look at (the exist questions)
+d_godhappen <- dplyr::select(d_open, age, contains("pid1"), godhappen_own, godhappen_ask, godhappen_both)
+
+# let's convert our data to tall format so we can include all of the same plots on the same figure
+library(reshape2)
+d_godhappen2 <- melt(d_godhappen, id.vars= c("pid1", "age"))
+
+
+# here, i'm making a dataframe with frequency counts added in
+d_godhappen_counts2 <- table(d_godhappen2$value, d_godhappen2$variable, d_godhappen2$age)
+#d_exist_counts2 <- round(prop.table(d_exist_counts2,2)*100,digits=0)
+
+df_ghc <- as.data.frame(d_godhappen_counts2)
+
+ggplot(data = df_ghc, aes(Var2, Freq)) + 
+  geom_bar(aes(fill = Var3), stat = "identity", position = "dodge") +
+      theme_minimal() +
+      labs(title="Children's responses to ``Does God decide to make things happen \non his own, does he only make things happen if people ask him to,\nor does he do both?``", x ="Item", y = "Counts", fill = "Age") +
+    scale_fill_brewer(palette = "Paired") +
+  scale_x_discrete(labels=c("godhappen_own" = "On his own", "godhappen_ask" = "When people ask", "godhappen_both" = "Both")) 
+
+# here, we're creating a new dataframe for a subset of our data that we want to look at (the exist questions)
+d_godhappen3 <- dplyr::select(d_open, godhappen_own, godhappen_ask, godhappen_both, contains("pid1"))
+
+# let's convert our data to tall format so we can include all of the same plots on the same figure
+library(reshape2)
+d_godhappen4 <- melt(d_godhappen3, id.vars= c("pid1"))
+
+# Compute the analysis of variance
+anova_godhappen <- aov(value ~ variable, data = d_godhappen4)
+# Summary of the analysis
+summary(anova_godhappen)
+TukeyHSD(anova_godhappen)
+```
+
+```{r how does god decide what to make happen in ppls lives}
+# here, we're creating a new dataframe for a subset of our data that we want to look at (the exist questions)
+d_howdecide <- dplyr::select(d_open, age, contains("pid1"), godhappen_howdecide_impact, godhappen_howdecide_moral,  godhappen_howdecide_choice, godhappen_howdecide_misc)
+
+# let's convert our data to tall format so we can include all of the same plots on the same figure
+d_howdecide2 <- melt(d_howdecide, id.vars= c("pid1", "age"))
+
+
+# here, i'm making a dataframe with frequency counts added in
+d_howdecide_counts2 <- table(d_howdecide2$value, d_howdecide2$variable, d_howdecide2$age)
+#d_exist_counts2 <- round(prop.table(d_exist_counts2,2)*100,digits=0)
+
+df_hdc <- as.data.frame(d_howdecide_counts2)
+
+###JW REMIND ME WHAT THE CHOICE CODE CATEGORY WAS?
+ggplot(data = df_hdc, aes(Var2, Freq)) + 
+  geom_bar(aes(fill = Var3), stat = "identity", position = "dodge") +
+      theme_minimal() +
+      labs(title="Children's responses to ``How does God \ndecide what things to help make happen?``", x ="Item", y = "Counts", fill = "Age") +
+    scale_fill_brewer(palette = "Paired") +
+  scale_x_discrete(labels=c("godhappen_howdecide_impact" = "The impact", "godhappen_howdecide_choice" = "Choices", "godhappen_howdecide_moral" = "Morals", "godhappen_howdecide_misc" = "Other")) 
+
+# here, we're creating a new dataframe for a subset of our data that we want to look at (the exist questions)
+d_howdecide3 <- dplyr::select(d_open, godhappen_howdecide_impact, godhappen_howdecide_moral,  godhappen_howdecide_choice, godhappen_howdecide_misc, contains("pid1"))
+
+# let's convert our data to tall format so we can include all of the same plots on the same figure
+d_howdecide4 <- melt(d_howdecide3, id.vars= c("pid1"))
+
+# Compute the analysis of variance
+anova_howdecide <- aov(value ~ variable, data = d_howdecide4)
+# Summary of the analysis
+summary(anova_howdecide)
+TukeyHSD(anova_howdecide)
+```
+
+```{r what was prayer about}
+# here, we're creating a new dataframe for a subset of our data that we want to look at (the exist questions)
+d_howdecide <- dplyr::select(d_open, age, contains("pid1"), godhappen_howdecide_impact, godhappen_howdecide_moral,  godhappen_howdecide_choice, godhappen_howdecide_misc)
+
+# let's convert our data to tall format so we can include all of the same plots on the same figure
+d_howdecide2 <- melt(d_howdecide, id.vars= c("pid1", "age"))
+
+
+# here, i'm making a dataframe with frequency counts added in
+d_howdecide_counts2 <- table(d_howdecide2$value, d_howdecide2$variable, d_howdecide2$age)
+#d_exist_counts2 <- round(prop.table(d_exist_counts2,2)*100,digits=0)
+
+df_hdc <- as.data.frame(d_howdecide_counts2)
+
+###JW REMIND ME WHAT THE CHOICE CODE CATEGORY WAS?
+ggplot(data = df_hdc, aes(Var2, Freq)) + 
+  geom_bar(aes(fill = Var3), stat = "identity", position = "dodge") +
+      theme_minimal() +
+      labs(title="Children's responses to ``How does God \ndecide what things to help make happen?``", x ="Item", y = "Counts", fill = "Age") +
+    scale_fill_brewer(palette = "Paired") +
+  scale_x_discrete(labels=c("godhappen_howdecide_impact" = "The impact", "godhappen_howdecide_choice" = "Choices", "godhappen_howdecide_moral" = "Morals", "godhappen_howdecide_misc" = "Other")) 
+
+# here, we're creating a new dataframe for a subset of our data that we want to look at (the exist questions)
+d_howdecide3 <- dplyr::select(d_open, godhappen_howdecide_impact, godhappen_howdecide_moral,  godhappen_howdecide_choice, godhappen_howdecide_misc, contains("pid1"))
+
+# let's convert our data to tall format so we can include all of the same plots on the same figure
+d_howdecide4 <- melt(d_howdecide3, id.vars= c("pid1"))
+
+# Compute the analysis of variance
+anova_howdecide <- aov(value ~ variable, data = d_howdecide4)
+# Summary of the analysis
+summary(anova_howdecide)
+TukeyHSD(anova_howdecide)
+```
+
+Would be intersting to look at children who talk to god. Need to look at god_earth categories
