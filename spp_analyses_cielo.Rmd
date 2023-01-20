@@ -4,11 +4,12 @@ author: "Hannah Lunkenheimer"
 date: "`r Sys.Date()`"
 output: html_document
 ---
+Repeated measures logistic regression, Chi square
 
 ```{r setup, include=FALSE}
 
 knitr::opts_chunk$set(dev = "png",
-                      dpi = 300,
+                      dpi = 600,
                       echo = FALSE,
                       cache = TRUE)
 
@@ -29,6 +30,7 @@ d_all <- subset(d_all, id_num != "129" & id_num != "152" & id_num != "175" & id_
 
 d_open <- read_csv("HelenCoding.Cielo.final.csv")
 d_open <- subset(d_open, pid1 != "1")
+d_open$age <- dplyr::recode(d_open$age, '6' = "Younger", "7" = "Younger", "8" = "Younger", "9" = "Older", "10" = "Older", "11" = "Older", "12" = "Older")
 
 ```
 
@@ -76,6 +78,9 @@ d_intervention$people <- rowSums(d_intervention[,c(1, 5, 6, 7, 8, 9, 10, 11, 12,
 d_intervention$totalinter <- rowSums(d_intervention[, c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14)]/14)
 d_intervention$religiosity <- rowSums(d_intervention[, c(18, 19)]/2)
 
+##JW, FAMILY RELIGIOSITY ATTENDS SERVICES, IMPORTANT RELIG TRADITION, HOW OFTEN YOU PRAY
+##PARENT INTERVENTION: PARENT IDEA OF GOD, INTERVENED IN LIFE
+
 #creating a filter to exclude IDK responses from analyses
 d_intervention2 <- dplyr::filter(d_intervention, help_plants != 5 | help_love != 5) 
 d_intervention2 <- dplyr::filter(d_intervention2, help_love != 5) 
@@ -94,23 +99,16 @@ d_know2 <- melt(d_know, id.vars= c("pid1", "age"))
 
 # here, i'm making a dataframe with frequency counts added in
 d_know_counts2 <- table(d_know2$value, d_know2$variable, d_know2$age)
-#d_exist_counts2 <- round(prop.table(d_exist_counts2,2)*100,digits=0)
+#d_know_counts2 <- round(prop.table(d_exist_counts2,2)*100,digits=0)
 
 df_kc <- as.data.frame(d_know_counts2)
 
-```
-
-```{r know and age bar graph}
-##JW, DO WE WANT TO GROUP THE ACTION_ ITEMS TOGETHER, OR KEEP THEM SEPARATE?
 ggplot(data = df_kc, aes(Var2, Freq)) + 
   geom_bar(aes(fill = Var3), stat = "identity", position = "dodge") +
       theme_minimal() +
       labs(title="Children's responses to ``Tell me what you know about God``", x ="Item", y = "Counts", fill = "Age") +
     scale_fill_brewer(palette = "Paired") +
   scale_x_discrete(labels=c("know_location" = "Location", "know_properties" = "Properties", "know_action_creation" = "Creation", "know_action_intervention" = "Intervention", "know_action_other" = "Other", "know_idk" = "IDK", "know_uncodable" = "Uncoded")) 
-```
-
-```{r know box plot and sig diffs}
 
 # here, we're creating a new dataframe for a subset of our data that we want to look at (the exist questions)
 d_know3 <- dplyr::select(d_open, know_location, know_properties, know_action_creation, know_action_intervention, know_action_other, contains("pid1"))
@@ -118,6 +116,7 @@ d_know3 <- dplyr::select(d_open, know_location, know_properties, know_action_cre
 # let's convert our data to tall format so we can include all of the same plots on the same figure
 library(reshape2)
 d_know4 <- melt(d_know3, id.vars= c("pid1"))
+
 
 
 # here, i'm making a dataframe with frequency counts added in
@@ -133,9 +132,6 @@ ggplot(data = d_know4, mapping = aes(x = variable, y = value, color = variable))
   scale_color_brewer(palette= "Paired") +
   theme(legend.position = "none") +
   labs(title = "Intervention Cluster Mean Scores")
-```
-
-```{r anova for know}
 
 # Compute the analysis of variance
 anova_know <- aov(value ~ variable, data = d_know4)
@@ -143,6 +139,11 @@ anova_know <- aov(value ~ variable, data = d_know4)
 summary(anova_know)
 TukeyHSD(anova_know)
 
+#other intervention? WE COULD CALL THIS ACTIONS
+
+
+table(d_know4$variable, d_know4$value)
+chisq.test(d_know4$variable, d_know4$value, correct=FALSE)
 ```
 
 ```{r inter and age table df}
@@ -152,6 +153,8 @@ d_inter <- dplyr::select(d_open, age, contains("pid1"), inter_ppl_prayers, inter
 # let's convert our data to tall format so we can include all of the same plots on the same figure
 library(reshape2)
 d_inter2 <- melt(d_inter, id.vars= c("pid1", "age"))
+d_inter2 <- na.omit(d_inter2)
+d_inter2 <- filter(d_inter2, value != 0)
 
 
 # here, i'm making a dataframe with frequency counts added in
@@ -160,18 +163,13 @@ d_inter_counts2 <- table(d_inter2$value, d_inter2$variable, d_inter2$age)
 
 df_ic <- as.data.frame(d_inter_counts2)
 
-```
-
-```{r inter and age bar graph}
-ggplot(data = df_ic, aes(Var2, Freq)) + 
-  geom_bar(aes(fill = Var3), stat = "identity", position = "dodge") +
+ggplot(data = d_inter2, aes(variable, value)) + 
+  geom_bar(aes(fill = age), stat = "identity", position = "stack") +
       theme_minimal() +
       labs(title="Children's responses to ``What does god do?``", x ="Item", y = "Counts", fill = "Age") +
     scale_fill_brewer(palette = "Paired") +
   scale_x_discrete(labels=c("inter_ppl_prayers" = "Answer prayers", "inter_ppl_miracles" = "Miracles", "inter_ppl_healing" = "Heals", "inter_ppl_helping" = "Helps", "inter_ppl_control" = "Controls", "inter_ppl_moral" = "Morals", "inter_ppl_judgement" = "Judgement", "inter_ture" = "Nature")) 
-```
 
-```{r inter box plot and sig diffs}
 
 # here, we're creating a new dataframe for a subset of our data that we want to look at (the exist questions)
 d_inter3 <- dplyr::select(d_open, inter_ppl_prayers, inter_ppl_miracles, inter_ppl_healing, inter_ppl_helping, inter_ppl_control, inter_ppl_moral, inter_ppl_judgement, contains("pid1"))
@@ -186,9 +184,6 @@ d_inter4 <- melt(d_inter3, id.vars= c("pid1"))
 #d_exist_counts2 <- addmargins(d_exist_counts2)
 #d_exist_counts2 <- round(prop.table(d_exist_counts2,2)*100,digits=0)
 
-```
-
-```{r anova for inter}
 
 # Compute the analysis of variance
 anova_inter <- aov(value ~ variable, data = d_inter4)
@@ -196,6 +191,8 @@ anova_inter <- aov(value ~ variable, data = d_inter4)
 summary(anova_inter)
 TukeyHSD(anova_inter)
 
+###################
+# LOOK AT THESE COUNTS OVERALL, OR SPLIT INTO OLDER (9-12) AND YOUNGER (6, 7, 8) SAMPLES
 ```
 
 ```{r does god make things happen on his own or when ppl ask}
@@ -206,7 +203,6 @@ d_godhappen <- dplyr::select(d_open, age, contains("pid1"), godhappen_own, godha
 library(reshape2)
 d_godhappen2 <- melt(d_godhappen, id.vars= c("pid1", "age"))
 
-
 # here, i'm making a dataframe with frequency counts added in
 d_godhappen_counts2 <- table(d_godhappen2$value, d_godhappen2$variable, d_godhappen2$age)
 #d_exist_counts2 <- round(prop.table(d_exist_counts2,2)*100,digits=0)
@@ -216,7 +212,7 @@ df_ghc <- as.data.frame(d_godhappen_counts2)
 ggplot(data = df_ghc, aes(Var2, Freq)) + 
   geom_bar(aes(fill = Var3), stat = "identity", position = "dodge") +
       theme_minimal() +
-      labs(title="Children's responses to ``Does God decide to make things happen \non his own, does he only make things happen if people ask him to,\nor does he do both?``", x ="Item", y = "Counts", fill = "Age") +
+      labs(title="Children's responses: How does God make things happen?", x ="Item", y = "Counts", fill = "Age") +
     scale_fill_brewer(palette = "Paired") +
   scale_x_discrete(labels=c("godhappen_own" = "On his own", "godhappen_ask" = "When people ask", "godhappen_both" = "Both")) 
 
@@ -232,12 +228,16 @@ anova_godhappen <- aov(value ~ variable, data = d_godhappen4)
 # Summary of the analysis
 summary(anova_godhappen)
 TukeyHSD(anova_godhappen)
+
+###########
+# RECODE THESE COLUMNS, AND SEE HOW IS CHANGES WITH AGE
 ```
 
 ```{r how does god decide what to make happen in ppls lives}
 # here, we're creating a new dataframe for a subset of our data that we want to look at (the exist questions)
 d_howdecide <- dplyr::select(d_open, age, contains("pid1"), godhappen_howdecide_impact, godhappen_howdecide_moral,  godhappen_howdecide_choice, godhappen_howdecide_misc)
 
+d_howdecide <- na.omit(d_howdecide)
 # let's convert our data to tall format so we can include all of the same plots on the same figure
 d_howdecide2 <- melt(d_howdecide, id.vars= c("pid1", "age"))
 
@@ -254,7 +254,15 @@ ggplot(data = df_hdc, aes(Var2, Freq)) +
       theme_minimal() +
       labs(title="Children's responses to ``How does God \ndecide what things to help make happen?``", x ="Item", y = "Counts", fill = "Age") +
     scale_fill_brewer(palette = "Paired") +
-  scale_x_discrete(labels=c("godhappen_howdecide_impact" = "The impact", "godhappen_howdecide_choice" = "Choices", "godhappen_howdecide_moral" = "Morals", "godhappen_howdecide_misc" = "Other")) 
+  scale_x_discrete(labels=c("godhappen_howdecide_impact" = "Impact", "godhappen_howdecide_choice" = "Choices", "godhappen_howdecide_moral" = "Morals", "godhappen_howdecide_misc" = "Other")) 
+
+ggplot(data = d_howdecide2, aes(variable, value)) + 
+  geom_bar(aes(fill = age), stat = "identity", position = "dodge") +
+      theme_minimal() +
+      labs(title="Children's responses to ``How does God \ndecide what things to help make happen?``", x ="Item", y = "Counts", fill = "Age") +
+    scale_fill_brewer(palette = "Paired") +
+  scale_x_discrete(labels=c("godhappen_howdecide_impact" = "Impact", "godhappen_howdecide_choice" = "Choices", "godhappen_howdecide_moral" = "Morals", "godhappen_howdecide_misc" = "Other")) 
+
 
 # here, we're creating a new dataframe for a subset of our data that we want to look at (the exist questions)
 d_howdecide3 <- dplyr::select(d_open, godhappen_howdecide_impact, godhappen_howdecide_moral,  godhappen_howdecide_choice, godhappen_howdecide_misc, contains("pid1"))
@@ -267,41 +275,246 @@ anova_howdecide <- aov(value ~ variable, data = d_howdecide4)
 # Summary of the analysis
 summary(anova_howdecide)
 TukeyHSD(anova_howdecide)
+
+############3
+# COULD GET RID OF "OTHER" HERE
 ```
 
 ```{r what was prayer about}
 # here, we're creating a new dataframe for a subset of our data that we want to look at (the exist questions)
-d_howdecide <- dplyr::select(d_open, age, contains("pid1"), godhappen_howdecide_impact, godhappen_howdecide_moral,  godhappen_howdecide_choice, godhappen_howdecide_misc)
+d_prayabout <- dplyr::select(d_open, age, contains("pid1"), pray_about_thanks, pray_about_thing,  pray_about_social, pray_about_perform, pray_about_wellbeing, pray_about_psych, pray_about_healing, pray_about_ritual)
 
 # let's convert our data to tall format so we can include all of the same plots on the same figure
-d_howdecide2 <- melt(d_howdecide, id.vars= c("pid1", "age"))
+d_prayabout2 <- melt(d_prayabout, id.vars= c("pid1", "age"))
 
 
 # here, i'm making a dataframe with frequency counts added in
-d_howdecide_counts2 <- table(d_howdecide2$value, d_howdecide2$variable, d_howdecide2$age)
+d_prayabout_counts2 <- table(d_prayabout2$value, d_prayabout2$variable, d_prayabout2$age)
 #d_exist_counts2 <- round(prop.table(d_exist_counts2,2)*100,digits=0)
 
-df_hdc <- as.data.frame(d_howdecide_counts2)
+df_pac <- as.data.frame(d_prayabout_counts2)
 
 ###JW REMIND ME WHAT THE CHOICE CODE CATEGORY WAS?
-ggplot(data = df_hdc, aes(Var2, Freq)) + 
-  geom_bar(aes(fill = Var3), stat = "identity", position = "dodge") +
+ggplot(data = d_prayabout2, aes(variable, value)) + 
+  geom_bar(aes(fill = age), stat = "identity", position = "stack") +
       theme_minimal() +
-      labs(title="Children's responses to ``How does God \ndecide what things to help make happen?``", x ="Item", y = "Counts", fill = "Age") +
-    scale_fill_brewer(palette = "Paired") +
-  scale_x_discrete(labels=c("godhappen_howdecide_impact" = "The impact", "godhappen_howdecide_choice" = "Choices", "godhappen_howdecide_moral" = "Morals", "godhappen_howdecide_misc" = "Other")) 
+      labs(title="Content of children's prayers", x ="Item", y = "Counts", fill = "Response") +
+    scale_fill_brewer(palette = "Paired", labels=c("0" = "Didn't mention", "1" = "Mentioned")) +
+  scale_x_discrete(labels=c("pray_about_thanks" = "Thanks", "pray_about_thing" = "Things", "pray_about_social" = "Social", "pray_about_perform" = "Performance", "pray_about_wellbeing" = "Well-being", "pray_about_psych" = "Psych", "pray_about_healing" = "Healing", "pray_about_ritual" = "Ritual")) 
 
 # here, we're creating a new dataframe for a subset of our data that we want to look at (the exist questions)
-d_howdecide3 <- dplyr::select(d_open, godhappen_howdecide_impact, godhappen_howdecide_moral,  godhappen_howdecide_choice, godhappen_howdecide_misc, contains("pid1"))
+d_prayabout3 <- dplyr::select(d_open, contains("pid1"), pray_about_thanks, pray_about_thing,  pray_about_social, pray_about_perform, pray_about_wellbeing, pray_about_psych, pray_about_healing, pray_about_ritual)
 
 # let's convert our data to tall format so we can include all of the same plots on the same figure
-d_howdecide4 <- melt(d_howdecide3, id.vars= c("pid1"))
+d_prayabout4 <- melt(d_prayabout3, id.vars= c("pid1"))
 
 # Compute the analysis of variance
-anova_howdecide <- aov(value ~ variable, data = d_howdecide4)
+anova_prayabout <- aov(value ~ variable, data = d_prayabout4)
 # Summary of the analysis
-summary(anova_howdecide)
-TukeyHSD(anova_howdecide)
+summary(anova_prayabout)
+TukeyHSD(anova_prayabout)
 ```
 
 Would be intersting to look at children who talk to god. Need to look at god_earth categories
+
+# What kinds of things does God make happen on earth?
+```{r what kinds of things does god make happen on earth?}
+# here, we're creating a new dataframe for a subset of our data that we want to look at (the exist questions)
+d_godearth <- dplyr::select(d_open, age, contains("pid1"), godearth_prayers, godearth_miracles,  godearth_healing, godearth_helping, godearth_control, godearth_moral, godearth_judgement, godearth_ture)
+
+# let's convert our data to tall format so we can include all of the same plots on the same figure
+d_godearth2 <- melt(d_godearth, id.vars= c("pid1", "age"))
+d_godearth2 <- na.omit(d_godearth2)
+d_godearth2 <- filter(d_godearth2, value != 0)
+
+# here, i'm making a dataframe with frequency counts added in
+d_godearth_counts2 <- table(d_godearth2$value, d_godearth2$variable, d_godearth2$age)
+#d_exist_counts2 <- round(prop.table(d_exist_counts2,2)*100,digits=0)
+
+df_gec <- as.data.frame(d_godearth_counts2)
+df_gec <- filter(df_gec, Var1 != 0)
+
+ggplot(data = d_godearth2, aes(variable, value)) + 
+  geom_bar(aes(fill = age), stat = "identity", position = "stack") +
+      theme_minimal() +
+      labs(title="What kinds of things does God make happen on earth?", x ="Item", y = "Counts", fill = "Response") +
+    scale_fill_brewer(palette = "Paired", labels=c("0" = "Didn't mention", "1"= "Child \nmentioned")) +
+  scale_x_discrete(labels=c("godearth_prayers" = "Prayers", "godearth_miracles" = "Miracles", "godearth_healing" = "Healing", "godearth_helping" = "Helping", "godearth_control" = "Control", "godearth_moral" = "Moral", "godearth_judgement" = "Judgement", "godearth_ture" = "Nature")) 
+
+# here, we're creating a new dataframe for a subset of our data that we want to look at (the exist questions)
+#d_prayabout3 <- dplyr::select(d_open, contains("pid1"), pray_about_thanks, pray_about_thing,  pray_about_social, pray_about_perform, pray_about_wellbeing, #pray_about_psych, pray_about_healing, pray_about_ritual)
+#
+## let's convert our data to tall format so we can include all of the same plots on the same figure
+#d_prayabout4 <- melt(d_prayabout3, id.vars= c("pid1"))
+```
+
+# Does God make things happen in people's lives?
+```{r does god make things happen in people's lives?}
+# here, we're creating a new dataframe for a subset of our data that we want to look at (the exist questions)
+d_godlives <- dplyr::select(d_open, age, contains("pid1"), godlives_prayers, godlives_miracles,  godlives_healing, godlives_helping, godlives_control, godlives_moral, godlives_judgement, godlives_ture)
+
+# let's convert our data to tall format so we can include all of the same plots on the same figure
+d_godlives2 <- melt(d_godlives, id.vars= c("pid1", "age"))
+d_godlives2 <- na.omit(d_godlives2)
+d_godlives2 <- filter(d_godlives2, value != 0)
+
+# here, i'm making a dataframe with frequency counts added in
+d_godlives_counts2 <- table(d_godlives2$value, d_godlives2$variable, d_godlives2$age)
+#d_exist_counts2 <- round(prop.table(d_exist_counts2,2)*100,digits=0)
+
+df_glc <- as.data.frame(d_godlives_counts2)
+df_glc <- filter(df_glc, Var1 != 0)
+
+ggplot(data = d_godlives2, aes(variable, value)) + 
+  geom_bar(aes(fill = age), stat = "identity", position = "stack") +
+      theme_minimal() +
+      labs(title="What kinds of things does God make happen on earth?", x ="Item", y = "Counts", fill = "Response") +
+    scale_fill_brewer(palette = "Paired", labels=c("0" = "Didn't mention", "1"= "Child \nmentioned")) +
+  scale_x_discrete(labels=c("godlives_prayers" = "Prayers", "godlives_miracles" = "Miracles", "godlives_healing" = "Healing", "godlives_helping" = "Helping", "godlives_control" = "Control", "godlives_moral" = "Moral", "godlives_judgement" = "Judgement", "godlives_ture" = "Nature")) 
+
+
+```
+
+# Has God ever made something happen in your own life?
+```{r does god make things happen in your life?}
+
+# here, we're creating a new dataframe for a subset of our data that we want to look at (the exist questions)
+d_ownlife <- dplyr::select(d_open, age, contains("pid1"), ownlife_prayers, ownlife_miracles,  ownlife_healing, ownlife_helping, ownlife_control, ownlife_moral, ownlife_judgement, ownlife_ture)
+
+# let's convert our data to tall format so we can include all of the same plots on the same figure
+d_ownlife2 <- melt(d_ownlife, id.vars= c("pid1", "age"))
+d_ownlife2 <- na.omit(d_ownlife2)
+d_ownlife2 <- filter(d_ownlife2, value != 0)
+
+# here, i'm making a dataframe with frequency counts added in
+d_ownlife_counts2 <- table(d_ownlife2$value, d_ownlife2$variable, d_ownlife2$age)
+#d_exist_counts2 <- round(prop.table(d_exist_counts2,2)*100,digits=0)
+
+df_olc <- as.data.frame(d_ownlife_counts2)
+df_olc <- filter(df_olc, Var1 != 0)
+
+ggplot(data = d_ownlife2, aes(variable, value)) + 
+  geom_bar(aes(fill = age), stat = "identity", position = "stack") +
+      theme_minimal() +
+      labs(title="What kinds of things does God make happen on earth?", x ="Item", y = "Counts", fill = "Response") +
+    scale_fill_brewer(palette = "Paired", labels=c("0" = "Didn't mention", "1"= "Child \nmentioned")) +
+  scale_x_discrete(labels=c("ownlife_prayers" = "Prayers", "ownlife_miracles" = "Miracles", "ownlife_healing" = "Healing", "ownlife_helping" = "Helping", "ownlife_control" = "Control", "ownlife_moral" = "Moral", "ownlife_judgement" = "Judgement", "ownlife_ture" = "Nature")) 
+
+
+```
+
+```{r adding our figures together}
+
+ggplot(data = d_inter2, aes(variable, value)) + 
+  geom_bar(aes(fill = age), stat = "identity", position = "stack") +
+      theme_minimal() +
+      labs(title="Children's responses to ``What does god do?``", x ="Item", y = "Counts", fill = "Age") +
+    scale_fill_brewer(palette = "Paired") +
+  scale_x_discrete(labels=c("inter_ppl_prayers" = "Prayers", "inter_ppl_miracles" = "Miracles", "inter_ppl_healing" = "Heals", "inter_ppl_helping" = "Helps", "inter_ppl_control" = "Controls", "inter_ppl_moral" = "Morals", "inter_ppl_judgement" = "Judgement", "inter_ture" = "Nature")) 
+
+
+ggplot(data = d_godearth2, aes(variable, value)) + 
+  geom_bar(aes(fill = age), stat = "identity", position = "stack") +
+      theme_minimal() +
+      labs(title="What kinds of things does God make happen on earth?", x ="Item", y = "Counts", fill = "Response") +
+    scale_fill_brewer(palette = "Paired", labels=c("0" = "Didn't mention", "1"= "Child \nmentioned")) +
+  scale_x_discrete(labels=c("godearth_prayers" = "Prayers", "godearth_miracles" = "Miracles", "godearth_healing" = "Healing", "godearth_helping" = "Helping", "godearth_control" = "Control", "godearth_moral" = "Moral", "godearth_judgement" = "Judgement", "godearth_ture" = "Nature")) 
+
+ggplot(data = d_godlives2, aes(variable, value)) + 
+  geom_bar(aes(fill = age), stat = "identity", position = "stack") +
+      theme_minimal() +
+      labs(title="What kinds of things does God make happen in people's lives?", x ="Item", y = "Counts", fill = "Response") +
+    scale_fill_brewer(palette = "Paired", labels=c("0" = "Didn't mention", "1"= "Child \nmentioned")) +
+  scale_x_discrete(labels=c("godlives_prayers" = "Prayers", "godlives_miracles" = "Miracles", "godlives_healing" = "Healing", "godlives_helping" = "Helping", "godlives_control" = "Control", "godlives_moral" = "Moral", "godlives_judgement" = "Judgement", "godlives_ture" = "Nature")) 
+
+ggplot(data = d_ownlife2, aes(variable, value)) + 
+  geom_bar(aes(fill = age), stat = "identity", position = "stack") +
+      theme_minimal() +
+      labs(title="What kinds of things has God made happen in your own life?", x ="Item", y = "Counts", fill = "Response") +
+    scale_fill_brewer(palette = "Paired", labels=c("0" = "Didn't mention", "1"= "Child \nmentioned")) +
+  scale_x_discrete(labels=c("ownlife_prayers" = "Prayers", "ownlife_miracles" = "Miracles", "ownlife_healing" = "Healing", "ownlife_helping" = "Helping", "ownlife_control" = "Control", "ownlife_moral" = "Moral", "ownlife_judgement" = "Judgement", "ownlife_ture" = "Nature")) 
+
+```
+
+```{r making a full fig for abstract}
+sppfigdata <- read_csv("data/sppfigdata.csv")
+
+
+sppplot<- ggplot(data = sppfigdata, aes(x=cat, fill=question)) + 
+  geom_bar(position = "dodge") +
+      theme_minimal() +
+      labs(x ="Category", y = "Counts", fill = "Question") +
+    scale_fill_brewer(palette = "Paired", labels=c("goddo"= "What does God do?", "earth" = "What kinds of things does God \nmake happen on earth?", "ownlife"= "Has God ever made something \nhappen in your own life?", "peopleslives" = "What kinds of things does God \nmake happen in people's lives?")) +
+    theme(legend.position = "top") +
+  scale_x_discrete(labels=c("prayers" = "Prayers", "miracles" = "Miracles", "healing" = "Healing", "helping" = "Helping", "control" = "Control", "judgement" = "Judgement", "nature" = "Nature"))
+
+ggsave("spptest.png", plot = sppplot, width = 10, height = 5, units = "in", dpi = 300)
+
+```
+## REPEATED MEASURES ANOVA
+
+```{r spp chi squares for questions and categories}
+d_sppchisq <- dplyr::select(d_open, contains("pid1"), ownlife_prayers, ownlife_miracles,  ownlife_healing, ownlife_helping, ownlife_control, ownlife_judgement, ownlife_ture, inter_ppl_prayers, inter_ppl_miracles, inter_ppl_healing, inter_ppl_helping, inter_ppl_control, inter_ppl_judgement, inter_ture, godearth_prayers, godearth_miracles,  godearth_healing, godearth_helping, godearth_control, godearth_judgement, godearth_ture, godlives_prayers, godlives_miracles,  godlives_healing, godlives_helping, godlives_control, godlives_judgement, godlives_ture)
+
+d_sppchisq <- na.omit(d_sppchisq)
+
+#!!!!!nature cluster!!!!!
+chisq.test(d_sppchisq$ownlife_ture, d_sppchisq$inter_ture, correct=FALSE)
+chisq.test(d_sppchisq$ownlife_ture, d_sppchisq$godearth_ture, correct=FALSE) #p<.05
+chisq.test(d_sppchisq$ownlife_ture, d_sppchisq$godlives_ture, correct=FALSE) 
+chisq.test(d_sppchisq$inter_ture, d_sppchisq$godearth_ture, correct=FALSE)
+chisq.test(d_sppchisq$inter_ture, d_sppchisq$godlives_ture, correct=FALSE)
+chisq.test(d_sppchisq$godearth_ture, d_sppchisq$godlives_ture, correct=FALSE) #p<.05
+
+#!!!!!helping cluster!!!!!
+chisq.test(d_sppchisq$ownlife_helping, d_sppchisq$inter_ppl_helping, correct=FALSE)
+chisq.test(d_sppchisq$ownlife_helping, d_sppchisq$godearth_helping, correct=FALSE)
+chisq.test(d_sppchisq$ownlife_helping, d_sppchisq$godlives_helping, correct=FALSE) #p<.05
+chisq.test(d_sppchisq$inter_ppl_helping, d_sppchisq$godearth_helping, correct=FALSE)
+chisq.test(d_sppchisq$inter_ppl_helping, d_sppchisq$godlives_helping, correct=FALSE)
+chisq.test(d_sppchisq$godearth_helping, d_sppchisq$godlives_helping, correct=FALSE) 
+
+#!!!!!judgement cluster!!!!!
+#chisq.test(d_sppchisq$ownlife_judgement, d_sppchisq$inter_ppl_judgement, correct=FALSE)
+#chisq.test(d_sppchisq$ownlife_judgement, d_sppchisq$godearth_judgement, correct=FALSE)
+#chisq.test(d_sppchisq$ownlife_judgement, d_sppchisq$godlives_judgement, correct=FALSE) 
+chisq.test(d_sppchisq$inter_ppl_judgement, d_sppchisq$godearth_judgement, correct=FALSE)
+chisq.test(d_sppchisq$inter_ppl_judgement, d_sppchisq$godlives_judgement, correct=FALSE)
+chisq.test(d_sppchisq$godearth_judgement, d_sppchisq$godlives_judgement, correct=FALSE) 
+
+#!!!!!control cluster!!!!!
+chisq.test(d_sppchisq$ownlife_control, d_sppchisq$inter_ppl_control, correct=FALSE)
+chisq.test(d_sppchisq$ownlife_control, d_sppchisq$godearth_control, correct=FALSE)
+table(d_sppchisq$ownlife_control, d_sppchisq$godlives_control)
+chisq.test(d_sppchisq$ownlife_control, d_sppchisq$godlives_control, correct=FALSE) 
+chisq.test(d_sppchisq$inter_ppl_control, d_sppchisq$godearth_control, correct=FALSE)
+chisq.test(d_sppchisq$inter_ppl_control, d_sppchisq$godlives_control, correct=FALSE)
+table(d_sppchisq$godearth_control, d_sppchisq$godlives_control)
+chisq.test(d_sppchisq$godearth_control, d_sppchisq$godlives_control, correct=FALSE) #p<.001
+
+#!!!!!healing cluster!!!!!
+chisq.test(d_sppchisq$ownlife_healing, d_sppchisq$inter_ppl_healing, correct=FALSE)
+chisq.test(d_sppchisq$ownlife_healing, d_sppchisq$godearth_healing, correct=FALSE)
+chisq.test(d_sppchisq$ownlife_healing, d_sppchisq$godlives_healing, correct=FALSE) #p<.001
+chisq.test(d_sppchisq$inter_ppl_healing, d_sppchisq$godearth_healing, correct=FALSE)
+chisq.test(d_sppchisq$inter_ppl_healing, d_sppchisq$godlives_healing, correct=FALSE)
+chisq.test(d_sppchisq$godearth_healing, d_sppchisq$godlives_healing, correct=FALSE)
+
+#!!!!!prayers cluster!!!!!
+chisq.test(d_sppchisq$ownlife_prayers, d_sppchisq$inter_ppl_prayers, correct=FALSE)
+chisq.test(d_sppchisq$ownlife_prayers, d_sppchisq$godearth_prayers, correct=FALSE) #p<.001
+chisq.test(d_sppchisq$ownlife_prayers, d_sppchisq$godlives_prayers, correct=FALSE)
+chisq.test(d_sppchisq$inter_ppl_prayers, d_sppchisq$godearth_prayers, correct=FALSE)
+chisq.test(d_sppchisq$inter_ppl_prayers, d_sppchisq$godlives_prayers, correct=FALSE)
+chisq.test(d_sppchisq$godearth_prayers, d_sppchisq$godlives_prayers, correct=FALSE)
+
+#!!!!!miracles cluster!!!!!
+chisq.test(d_sppchisq$ownlife_miracles, d_sppchisq$inter_ppl_miracles, correct=FALSE)
+chisq.test(d_sppchisq$ownlife_miracles, d_sppchisq$godearth_miracles, correct=FALSE)
+chisq.test(d_sppchisq$ownlife_miracles, d_sppchisq$godlives_miracles, correct=FALSE)
+chisq.test(d_sppchisq$inter_ppl_miracles, d_sppchisq$godearth_miracles, correct=FALSE) #p<.06
+chisq.test(d_sppchisq$inter_ppl_miracles, d_sppchisq$godlives_miracles, correct=FALSE) #p<.0154
+chisq.test(d_sppchisq$godearth_miracles, d_sppchisq$godlives_miracles, correct=FALSE) #p<.007
+
+
+```
