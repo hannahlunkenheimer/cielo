@@ -241,7 +241,6 @@ d_howdecide <- na.omit(d_howdecide)
 # let's convert our data to tall format so we can include all of the same plots on the same figure
 d_howdecide2 <- melt(d_howdecide, id.vars= c("pid1", "age"))
 
-
 # here, i'm making a dataframe with frequency counts added in
 d_howdecide_counts2 <- table(d_howdecide2$value, d_howdecide2$variable, d_howdecide2$age)
 #d_exist_counts2 <- round(prop.table(d_exist_counts2,2)*100,digits=0)
@@ -438,15 +437,17 @@ ggplot(data = d_ownlife2, aes(variable, value)) +
 
 ```{r making a full fig for abstract}
 sppfigdata <- read_csv("data/sppfigdata.csv")
-
-
+sppfigdata$question <- as.factor(sppfigdata$question)
+sppfigdata$question = factor(sppfigdata$question, levels = c("goddo", "earth", "peopleslives", "ownlife"), ordered = TRUE)
 sppplot<- ggplot(data = sppfigdata, aes(x=cat, fill=question)) + 
   geom_bar(position = "dodge") +
       theme_minimal() +
       labs(x ="Category", y = "Counts", fill = "Question") +
-    scale_fill_brewer(palette = "Paired", labels=c("goddo"= "What does God do?", "earth" = "What kinds of things does God \nmake happen on earth?", "ownlife"= "Has God ever made something \nhappen in your own life?", "peopleslives" = "What kinds of things does God \nmake happen in people's lives?")) +
+    scale_fill_brewer(palette = "Paired", breaks=c("goddo", "earth", "peopleslives", "ownlife"), labels=c("goddo"= "What does God do?", "earth" = "What kinds of things does God \nmake happen on Earth?", "peopleslives" = "What kinds of things does God \nmake happen in people's lives?", "ownlife"= "Has God ever made something \nhappen in your own life?")) +
     theme(legend.position = "top") +
   scale_x_discrete(labels=c("prayers" = "Prayers", "miracles" = "Miracles", "healing" = "Healing", "helping" = "Helping", "control" = "Control", "judgement" = "Judgement", "nature" = "Nature"))
+
+sppplot
 
 ggsave("spptest.png", plot = sppplot, width = 10, height = 5, units = "in", dpi = 300)
 
