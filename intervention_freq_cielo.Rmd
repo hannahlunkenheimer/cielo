@@ -442,7 +442,7 @@ reg4p <- lm(people ~ age + gender + control + religiosity + age*control + gender
 anova(null_modelp, reg1p, reg2p, reg3p, reg4p)
 AIC(reg1p, reg2p, reg3p, reg4p)
 
-
+anova(reg4p)
 tab_model(reg5, reg4p)
 
 ```

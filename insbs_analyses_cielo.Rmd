@@ -16,6 +16,8 @@ library(dplyr)
 library(readr)
 library(ggplot2)
 library(sjPlot)
+library(reshape2)
+library(ggsignif)
 # importing the data
 d_all <- read_csv("data/Cielo1_MergedFull_practice.csv")
 
@@ -102,7 +104,9 @@ ggplot(data = longdata, mapping = aes(x = variable, y = value, color = variable)
   theme_minimal() +
   scale_color_brewer(palette= "Paired") +
   theme(legend.position = "none") +
-  labs(title = "Intervention Cluster Mean Scores")
+  labs(title = "Intervention Cluster Mean Scores", x = "Domain", y = "Response") + 
+  scale_x_discrete(labels=c("outcome" = "Achievement", "health" = "Health", "social" = "Social", "psych" = "Psychology", "environment" = "Nature"))
+
 
 
 # Compute the analysis of variance
@@ -113,6 +117,120 @@ TukeyHSD(anova1)
 
 
 # computing anova for each cluster
+
+```
+
+```{r environment intervention regs}
+library(arm)
+
+# we start by creating our null model with a fixed slope and no predictors
+null_model <- lm(environment ~ 1, data = d_intervention2)
+summary(null_model)
+tab_model(null_model)
+coef(null_model)
+
+reg1 <- lm(environment ~ age, data = d_intervention2)
+summary(reg1)
+tab_model(null_model, reg1)
+
+reg2 <- lm(environment ~ age + gender, data = d_intervention2)
+summary(reg2)
+tab_model(null_model, reg1, reg2)
+
+reg3 <- lm(environment ~ age + gender + control, data = d_intervention2)
+summary(reg3)
+tab_model(null_model, reg1, reg2, reg3)
+
+reg4 <- lm(environment ~ age + gender + control + religiosity + age*gender + age*control + gender*control + age*religiosity + gender*religiosity + control*religiosity, data = d_intervention2)
+summary(reg4)
+tab_model(null_model, reg1, reg2, reg3, reg4)
+
+reg5 <- lm(environment ~ age + gender + control + religiosity  + gender*control, data = d_intervention2)
+AIC(reg1, reg2, reg3, reg4, reg5)
+anova(reg1, reg2, reg3, reg4, reg5)
+summary(reg5)
+
+tab_model(reg1, reg4, reg5)
+tab_model(reg5)
+AIC(reg1, reg4, reg5)
+
+```
+
+```{r psych intervention regs}
+library(arm)
+
+# we start by creating our null model with a fixed slope and no predictors
+null_modelpsych <- lm(psych ~ 1, data = d_intervention2)
+summary(null_modelpsych)
+tab_model(null_modelpsych)
+coef(null_modelpsych)
+
+reg1psych <- lm(psych ~ age, data = d_intervention2)
+summary(reg1psych)
+tab_model(null_modelpsych, reg1psych)
+
+reg2psych <- lm(psych ~ age + gender, data = d_intervention2)
+summary(reg2psych)
+tab_model(null_modelpsych, reg1psych, reg2psych)
+
+reg3psych <- lm(psych ~ age + gender + control, data = d_intervention2)
+summary(reg3psych)
+tab_model(null_modelpsych, reg1psych, reg2psych, reg3psych)
+
+reg4psych <- lm(psych ~ age + gender + control + religiosity + age*gender + age*control + gender*control + age*religiosity + gender*religiosity + control*religiosity, data = d_intervention2)
+summary(reg4psych)
+tab_model(null_modelpsych, reg1psych, reg2psych, reg3psych, reg4psych)
+
+reg5psych <- lm(psych ~ age + gender + control + religiosity  + gender*control, data = d_intervention2)
+AIC(reg1psych, reg2psych, reg3psych, reg4psych, reg5psych)
+anova(reg1psych, reg2psych, reg3psych, reg4psych, reg5psych)
+summary(reg5psych)
+
+tab_model(reg1psych, reg4psych, reg5psych)
+tab_model(reg5psych)
+AIC(reg1psych, reg4psych, reg5psych)
+
+```
+```{r social intervention regs}
+library(arm)
+
+# we start by creating our null model with a fixed slope and no predictors
+null_modelsocial <- lm(social ~ 1, data = d_intervention2)
+summary(null_modelsocial)
+tab_model(null_modelsocial)
+coef(null_modelsocial)
+
+reg1social <- lm(social ~ age, data = d_intervention2)
+summary(reg1social)
+tab_model(null_modelsocial, reg1social)
+
+```
+```{r outcome intervention regs}
+library(arm)
+
+# we start by creating our null model with a fixed slope and no predictors
+null_modeloutcmoe <- lm(outcome ~ 1, data = d_intervention2)
+summary(null_modeloutcmoe)
+tab_model(null_modeloutcmoe)
+coef(null_modeloutcmoe)
+
+reg1outcome <- lm(outcome ~ age, data = d_intervention2)
+summary(reg1outcome)
+tab_model(null_modeloutcmoe, reg1outcome)
+
+```
+```{r health intervention regs}
+library(arm)
+
+# we start by creating our null model with a fixed slope and no predictors
+null_modelhealth <- lm(health ~ 1, data = d_intervention2)
+summary(null_modelhealth)
+tab_model(null_modelhealth)
+coef(null_modelhealth)
+
+reg1health <- lm(health ~ age, data = d_intervention2)
+summary(reg1health)
+tab_model(null_modelhealth, reg1health)
 
 ```
 
