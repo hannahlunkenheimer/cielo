@@ -191,6 +191,7 @@ tab_model(reg5psych)
 AIC(reg1psych, reg4psych, reg5psych)
 
 ```
+
 ```{r social intervention regs}
 library(arm)
 
@@ -205,6 +206,7 @@ summary(reg1social)
 tab_model(null_modelsocial, reg1social)
 
 ```
+
 ```{r outcome intervention regs}
 library(arm)
 
@@ -219,6 +221,7 @@ summary(reg1outcome)
 tab_model(null_modeloutcmoe, reg1outcome)
 
 ```
+
 ```{r health intervention regs}
 library(arm)
 
@@ -234,4 +237,17 @@ tab_model(null_modelhealth, reg1health)
 
 ```
 
+Parent questions: 
+How often child attends services
+Important?
+How often child prays?
+Parent idea of god
+Has God intervened?
+
+Family Religiosity:  1, 2, 3
+Parent intervention: 4, 5
+
 ```{r parent intervention}
+
+
+```
