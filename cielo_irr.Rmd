@@ -12,7 +12,7 @@ library(irr)
 library(readr)
 
 d_paola <- read_csv("Paola-Cielo coding copy.csv")
-d_helen <- read_csv("HelenCoding.Cielo.final copy.csv")
+d_helen <- read_csv("helencoding_irr.csv")
 
 #paola<- as.vector(d_paola)
 #helen<- as.vector(d_helen)
@@ -25,8 +25,8 @@ This is an R Markdown document. Markdown is a simple formatting syntax for autho
 When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
 
 ```{r cars}
-#total <- merge(d_paola, d_helen,by="pid")
-#total = subset(total, select = -c(pid) )
+total <- merge(d_paola, d_helen,by="V1")
+total = subset(total, select = -c(pid) )
 
 for (dimension in 1:139) {
     v = paste0("V", dimension)

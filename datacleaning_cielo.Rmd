@@ -11,8 +11,9 @@ knitr::opts_chunk$set(echo = TRUE)
 # importing our data
 library(readr)
 library(dplyr)
-d_all <- read_csv("data/Cielo1_MergedFull_practice.csv")
+d_all <- read_csv("data/cleaned_cielo.csv")
 
+na.omit(d_all$S1)
 #subsetting out participants who were marked out red on the excel sheet (exlucded from analyses)
 d_all <- subset(d_all, id_num != "129" & id_num != "152" & id_num != "175" & id_num != "277")
 
