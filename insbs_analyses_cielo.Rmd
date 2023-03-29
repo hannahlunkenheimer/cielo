@@ -28,9 +28,6 @@ d_all <- read_csv("data/Cielo1_MergedFull_practice.csv")
 d_all <- subset(d_all, id_num != "129" & id_num != "152" & id_num != "175" & id_num != "277")
 # great, we've removed our 4 participants completely from our dataframe d_all and now have all of the participants we can use for analyses
 
-d_open <- read_csv("HelenCoding.Cielo.final.csv")
-d_open <- subset(d_open, pid1 != "1")
-
 ```
 
 ```{r age intervention factor sums}

@@ -34,7 +34,7 @@ subset(d_all, id_num != "129" & id_num != "152" & id_num != "175" & id_num != "2
 # so, from here, we'll use two factors and create average scores for them
 
 # creating our new dataframe
-d_interview <- d_all %>% dplyr::select(contains(c("age", "gender", "control...6", "relig_attendserv", "relig_tradition", "rgod_happen_earth", "rgod_happen_ever", "rgod_happen_lives", "rpers_happen")))
+d_interview <- d_all %>% dplyr::select(contains(c("age", "gender", "control...6", "relig_attendserv", "relig_tradition", "rgod_happen_earth", "rgod_happen_ever", "rgod_happen_lives", "rpers_happen", "relig_pray_freq", "relig_describe_god", "relig_intervene")))
 
 # recoding gender here to use in our reg
 d_interview$gender <- dplyr::recode(d_interview$gender, 'Male' = 1, 'Female'=2)
@@ -45,21 +45,26 @@ d_interview$rgod_happen_earth <- dplyr::recode(d_interview$rgod_happen_earth, 'N
 d_interview$rgod_happen_ever <- dplyr::recode(d_interview$rgod_happen_ever, 'No' = 1, 'Sometimes'=2, 'Yes' = 3, 'IDK' = 4)
 d_interview$rgod_happen_lives <- dplyr::recode(d_interview$rgod_happen_lives, 'No' = 1, 'Sometimes'=2, 'Yes' = 3, 'IDK' = 4)
 d_interview$rpers_happen <- dplyr::recode(d_interview$rpers_happen, 'No' = 1, 'Sometimes'=2, 'Yes' = 3, 'IDK' = 4)
+d_interview$relig_pray_freq <- dplyr::recode(d_interview$relig_pray_freq, 'Never' = 1, 'Less than once a year'=2, 'A few times a year' = 3, 'A few times a month' = 4, 'A few times a week' = 5, 'Daily' = 6, 'Multiple times a day' = 7)
 
+d_interview$relig_describe_god <- dplyr::recode(d_interview$relig_describe_god, 'I do not believe in God' = 1, 'A non-interventionist God; one who does not attempt to influence events in human life.'=2, 'A God who used to intervene in historical or biblical times, but is not particularly involved in the workings of modern life.' = 3, 'An interventionist God; one who is sometimes involved in the workings of modern life.' = 4, 'An interventionist God; one who is intimately involved in the workings of modern life.' = 5)
+d_interview$relig_intervene <- dplyr::recode(d_interview$relig_intervene, 'Absolutely not' = 1, 'Probably not'=2, 'Unsure' = 3, 'Probably yes' = 4, 'Absolutely yes' = 5)
 
 d_interview$gender <- as.factor(d_interview$gender)
 d_interview$control <- as.numeric(d_interview$control...6)
 d_interview$relig_attendserv <- as.numeric(d_interview$relig_attendserv)
-d_interview$relig_tradition <- as.numeric(d_interview$relig_tradition)
-
-#omitting NAs
-d_interview <- na.omit(d_interview)
-
+d_interview$relig_pray_freq <- as.numeric(d_interview$relig_pray_freq)
+d_interview$relig_describe_god <- as.numeric(d_interview$relig_describe_god)
 #deleting the old control...6 row
 d_interview <- d_interview[,-3] 
+#omitting NAs
+#d_interview <- na.omit(d_interview)
 
-# creating sum scores for our 2 factors (environment and people)
-d_interview$religiosity <- rowSums(d_interview[, c(3, 4)]/2)
+
+# creating sum scores for our IVs
+# how  often child attends services, how important, 
+d_interview$religiosity <- rowSums(d_interview[, c(3, 4, 9)]/3)
+d_interview$parentbeliefs <- rowSums(d_interview[, c(10, 11)]/2)
 d_interview$interviewscore <- rowSums(d_interview[, c(5, 6, 7, 8)]/4)
 
 #creating a filter to exclude IDK responses from analyses
@@ -253,21 +258,17 @@ g_rgodhappenall
 
 
 ```{r poster fig}
-
+#idrk what i'm trying to show here?
 g_poster <- ggplot(d_interview2, aes(age,religiosity)) + 
   geom_jitter(color="#999999") +
-  geom_smooth(aes(age,rgod_happen_lives), color="black", method="lm",se=FALSE) +
-  geom_smooth(aes(age,rgod_happen_ever), color="#56B4E9", method="lm",se=FALSE) +
-  geom_smooth(aes(age,rgod_happen_earth), color="#009E73", method="lm",se=FALSE) +
+  geom_smooth(aes(age,religiosity), color="black", method="lm",se=FALSE) +
+  geom_smooth(aes(age,relig_describe_god), color="#56B4E9", method="lm",se=FALSE) +
+  geom_smooth(aes(age,relig_intervene), color="#009E73", method="lm",se=FALSE) +
   geom_smooth(aes(age,rpers_happen), color="#F0E442", method="lm",se=FALSE) +
-  geom_smooth(aes(age,control), color="#0072B2", method="lm",se=FALSE)
-
-
-
-g_poster <- g_poster +
-   labs(title="Figure", fill = "Response") +
-  theme_minimal() +
-  labs(title="Figure X. Multiple predictors for total interview score", x = "Age", y = "Response", fill = "Interview score")
+  geom_smooth(aes(age,control), color="#0072B2", method="lm",se=FALSE) +
+  scale_color_manual(values=c("black"="#000000", "#56B4E9"="#56B4E9", "#009E73"="#009E73", "#F0E442"="#F0E442", "#0072B2"="#0072B2"),
+  labels=c("R. God happen lives", "R. God happen ever", "R. God happen earth", "R. pers. happen", "Control")) + 
+  labs(color="Legend Title")
 
 g_poster
 ```
@@ -336,18 +337,33 @@ reg4 <- lm(interviewscore ~ age + gender + religiosity + control, data = d_inter
 summary(reg4)
 coef(reg4)
 
-reg5 <- lm(interviewscore ~ age + gender + religiosity + control + age*gender + age*religiosity + gender*religiosity + age*control + gender*control + religiosity*control, data = d_interview2)
+reg5 <- lm(interviewscore ~ age + gender + religiosity + control + parentbeliefs + age*gender + age*religiosity + gender*religiosity + age*control + gender*control + religiosity*control + parentbeliefs*age + parentbeliefs*gender + parentbeliefs*religiosity + parentbeliefs*control, data = d_interview2)
 summary(reg5)
 coef(reg5)
 
 # i think this model is the best!
-reg6 <- lm(interviewscore ~ age + gender + religiosity + control + religiosity*control, data = d_interview2)
+reg6 <- lm(interviewscore ~ age + gender + religiosity + control + religiosity*control + parentbeliefs*age, data = d_interview2)
 summary(reg6)
 anova(reg6)
 coef(reg6)
 tab_model(reg6)
 
-AIC(reg4, reg5, reg6)
+reg7 <- lm(interviewscore ~ age + gender + religiosity + control + parentbeliefs*age, data = d_interview2)
+summary(reg7)
+anova(reg7)
+coef(reg7)
+tab_model(reg7)
+
+reg8 <- lm(interviewscore ~ age + gender + religiosity + control + parentbeliefs, data = d_interview2)
+summary(reg8)
+AIC(reg4)
+AIC(reg5)
+AIC(reg6)
+AIC(reg7)
+AIC(reg8)
+
+tab_model(reg4, reg5, reg6)
+
 
 ######################
 # TRY AND MAKE THIS A FIGURE reg6
@@ -389,5 +405,19 @@ interaction <- interaction + guides(col = guide_legend(nrow=1))
 interaction 
 
 interaction + ggplot2::scale_color_discrete(name = "Perceived control", labels = c("Low", "2", "3", "4", "5", "High"))
+
+```
+Parent questions: 
+How often child attends services
+Important?
+How often child prays?
+Parent idea of god
+Has God intervened?
+
+Family Religiosity:  1, 2, 3
+Parent intervention: 4, 5
+```{r regression for age, religiosity and control on intervention score}
+
+
 
 ```
