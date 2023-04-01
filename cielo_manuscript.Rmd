@@ -1,0 +1,56 @@
+---
+title: "cielo_manuscriptanalyses"
+author: "Hannah Lunkenheimer"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(dev = "png",
+                      dpi = 300,
+                      echo = FALSE,
+                      cache = TRUE)
+
+library(moonBook)
+library(dplyr)
+library(readr)
+library(ggplot2)
+library(sjPlot)
+# importing the data
+d_all <- read_csv("data/Cielo1_MergedFull_practice.csv")
+
+# now let's view our data
+#View(d_all)
+
+# some participant data needs to be thrown out completely according to the red rows in our CSV file, so let's remove those participants completely here (ID 129, 152, 175, and 277)
+subset(d_all, id_num != "129" & id_num != "152" & id_num != "175" & id_num != "277")
+# great, we've removed our 4 participants completely from our dataframe d_all and now have all of the participants we can use for analyses
+```
+
+## Recoding everything
+
+```{r recoding variables}
+# gender
+d_all$gender <- dplyr::recode(d_all$gender, 'Male' = 1, 'Female'=2)
+
+# control
+d_all$control...6 <- dplyr::recode(d_all$control...6, 'Really Disagree' = 6, 'Disagree'=5, 'Kind of Disagree' = 4, 'Kind of Agree' = 3, 'Agree' = 2, 'Really Agree' = 1)
+
+# religiosity
+d_all$relig_attendserv <- dplyr::recode(d_all$relig_attendserv, 'Never' = 1, 'Less than once a year'=2, 'A few times a year' = 3, 'A few times a month' = 4, 'A few times a week' = 5, 'Daily' = 6)
+d_all$relig_tradition <- dplyr::recode(d_all$relig_tradition, 'Not at all important' = 1, 'Minimally important'=2, 'Moderately important' = 3, 'Very important' = 4)
+
+# sure
+d_all$exist_sure_god <- recode(d_all$exist_sure_god, 'A little sure' = 1, 'Very sure' = 2)
+
+
+```
+
+## Creating scores
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

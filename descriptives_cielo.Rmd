@@ -56,6 +56,21 @@ d_exist<-subset(d_exist, gender!="Other")
 
 ```
 
+```{r parent religiosity}
+d_all$relig_parent1 <- recode(d_all$relig_parent1, 'Other Christian (Non-denominational)' = 'Other Christian', 'none' = 'Atheist', 'other christian' = 'Other Christian', 'protestant' = 'Protestant', 'Protestant,Other Christian' = 'Protestant', 'None' = 'Atheist', 'Not Answered' = 'Not answered', 'Athiest' = 'Atheist', 'Catholic/Buddhist' = 'Catholic', 'Other Christian,Athiest' = 'Other Christian', 'Other Christian/Atheist' = 'Other Christian')
+
+d_all$relig_parent2 <- recode(d_all$relig_parent2, 'Other Christian (Non-denominational)' = 'Other Christian', 'none' = 'Atheist', 'other christian' = 'Other Christian', 'protestant' = 'Protestant', 'Protestant,Other Christian' = 'Protestant', 'Athiest' = 'Atheist', 'Not Answered' = 'Not answered', 'Athiest' = 'Atheist', 'Catholic/Buddhist' = 'Catholic', 'Other Christian,Athiest' = 'Other Christian', 'Other Christian/Atheist' = 'Other Christian', 'catholic' = 'Catholic', 'Catholic,Athiest' = 'Catholic', 'catholic/other christian' = 'Catholic', 'Jewish/Atheist' = 'Other', 'None' = 'Atheist', 'Not Answered' = 'Not answered',  'protestant' = 'Protestant', 'Protestant,Athiest' = 'Protestant', 'Protestant,Other Christian' = 'Protestant', 'other Christian' = 'Other Christian')
+
+# recoding schooling
+d_all$school <- recode(d_all$school, 'homeschool' = 'Homeschool', "Not Answered" = 'Not answered', 'religious' = 'Religious', 'secular' = 'Secular')
+
+#recode into Protestant, Catholic, Christian other and so on
+#checking to see if kids are raised in a 2 relig household
+
+ifelse(d_all$relig_parent1==d_all$relig_parent2,"Yes","No")
+
+```
+
 ```{r exist descriptives by item}
 #viewing our new dataframe with our exist questions subset of data
 View(d_exist)

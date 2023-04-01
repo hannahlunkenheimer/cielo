@@ -371,7 +371,6 @@ tab_model(reg4, reg5, reg6)
 ```
 
 ```{r reg plotted}
-
 # religiosity and control are not statistically correlated with eachother
 library("ggpubr")
 ggscatter(d_interview2, x = "religiosity", y = "control", 
