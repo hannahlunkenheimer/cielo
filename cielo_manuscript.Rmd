@@ -16,6 +16,12 @@ library(dplyr)
 library(readr)
 library(ggplot2)
 library(sjPlot)
+library(lme4)
+library(car)
+library(DHARMa)
+library(janitor)
+library(reshape2)
+
 # importing the data
 d_all <- read_csv("data/Cielo1_MergedFull_practice.csv")
 
@@ -23,7 +29,7 @@ d_all <- read_csv("data/Cielo1_MergedFull_practice.csv")
 #View(d_all)
 
 # some participant data needs to be thrown out completely according to the red rows in our CSV file, so let's remove those participants completely here (ID 129, 152, 175, and 277)
-subset(d_all, id_num != "129" & id_num != "152" & id_num != "175" & id_num != "277")
+d_all <- subset(d_all, id_num != "129" & id_num != "152" & id_num != "175" & id_num != "277")
 # great, we've removed our 4 participants completely from our dataframe d_all and now have all of the participants we can use for analyses
 ```
 
@@ -31,26 +37,321 @@ subset(d_all, id_num != "129" & id_num != "152" & id_num != "175" & id_num != "2
 
 ```{r recoding variables}
 # gender
-d_all$gender <- dplyr::recode(d_all$gender, 'Male' = 1, 'Female'=2)
+#d_all$gender <- dplyr::recode(d_all$gender, 'Male' = 1, 'Female'=2, 'Other' = 3)
 
 # control
-d_all$control...6 <- dplyr::recode(d_all$control...6, 'Really Disagree' = 6, 'Disagree'=5, 'Kind of Disagree' = 4, 'Kind of Agree' = 3, 'Agree' = 2, 'Really Agree' = 1)
+d_all$control <- dplyr::recode(d_all$control...6, 'Really Disagree' = 6, 'Disagree'=5, 'Kind of Disagree' = 4, 'Kind of Agree' = 3, 'Agree' = 2, 'Really Agree' = 1)
 
 # religiosity
 d_all$relig_attendserv <- dplyr::recode(d_all$relig_attendserv, 'Never' = 1, 'Less than once a year'=2, 'A few times a year' = 3, 'A few times a month' = 4, 'A few times a week' = 5, 'Daily' = 6)
 d_all$relig_tradition <- dplyr::recode(d_all$relig_tradition, 'Not at all important' = 1, 'Minimally important'=2, 'Moderately important' = 3, 'Very important' = 4)
 
 # sure
-d_all$exist_sure_god <- recode(d_all$exist_sure_god, 'A little sure' = 1, 'Very sure' = 2)
+d_all$godcertainty <- ifelse(d_all$exist_sure_god == "A little sure", 1, 
+                               ifelse(d_all$exist_sure_god == "Very sure", 2, NA))
+# parent beliefs
+d_all$relig_describe_god <- dplyr::recode(d_all$relig_describe_god, 'I do not believe in God.' = 1, 'A non-interventionist God; one who does not attempt to influence events in human life.' = 2, 'A God who used to intervene in historical or biblical times, but is not particularly involved in the workings of modern life.' = 3, 'An interventionist God; one who is sometimes involved in the workings of modern life.' = 4, 'An interventionist God; one who is intimately involved in the workings of modern life.' = 5)
+d_all$relig_intervene <- dplyr::recode(d_all$relig_attendserv, 'Absolutely not' = 1, 'Probably not'=2, 'Unsure' = 3, 'Probably yes' = 4, 'Absolutely yes' = 5)
 
+# god's intervention columns 
+d_all <- d_all %>% 
+  mutate_at(vars(49:62),
+   ~as.numeric(dplyr::recode(.,
+    "Never"= 1,
+    "Only at special times"= 2,
+    "Pretty often"= 3,
+    "Always"= 4,
+    "always" = 4,
+    "IDK" = 5)))
+
+#binary focal interview questions
+d_all <- d_all %>% 
+  mutate_at(vars(43:47),
+   ~as.numeric(dplyr::recode(.,
+    "No"= 1,
+    "Sometimes"= 2,
+    "Yes"= 3,
+    "IDK"= 0)))
+
+d_all$rpers_happen <- dplyr::recode(d_all$rpers_happen, 'No' = 1, 'Sometimes'=2, 'Yes' = 3, 'IDK' = 0)
+
+#using the janitor package
+d_all$school <- tolower(d_all$school)
+
+
+#d_all$godcertainty <- recode(d_all$exist_sure_god, 'A little sure' = 1, "Very sure" = 2)
 
 ```
 
 ## Creating scores
-You can also embed plots, for example:
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+```{r summed scores for everything, echo=FALSE}
+#family religiosity (higher scores indicate higher levels of religiosity from 0 to 10)
+d_all$famreligiosity <- d_all$relig_attendserv + d_all$relig_tradition
+
+#parent beliefs (higher scores indicate stronger beliefs in god as interventionist from 0 to 10)
+d_all$parentbelief <- d_all$relig_describe_god + d_all$relig_intervene
+
+#intervention by domains from factor analysis and design
+d_all$environment <- rowSums(d_all[,c(50, 51, 52)]/3) #plants, sun, seasons
+d_all$psych <- rowSums(d_all[,c(55, 57, 60, 61)]/4) #dreams, happy, brave, decisions
+d_all$health <- rowSums(d_all[,c(49, 62)]/2) #sick, safe
+d_all$achieve <- rowSums(d_all[,c(56, 58, 59)]/3) #job, sports, find
+d_all$social <- rowSums(d_all[,c(53, 54)]/2) #love, friends
+d_all$alldomains <- rowSums(d_all[,c(49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62)]/14) 
+
+#4 intervention open-ended interview score
+d_all$interview <- rowSums(d_all[,c(43, 45, 47, 64)]/4)
+
+#in case i need code to filter out IDK responses from analyses
+# d_interview2 <- dplyr::filter(d_interview, rgod_happen_earth != 4) 
+
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+### Does certainty in God's being real differ across age?
+
+```{r God certainty changes in age?}
+#creating a plot and regressions to see if there are any changes in real/pretend god certainty 
+godcertainty1 <- lm(godcertainty ~ age + parentbelief + famreligiosity + gender + age*parentbelief + age*famreligiosity, data = d_all)
+summary(godcertainty1)
+godcertainty2 <- lm(godcertainty ~ parentbelief + famreligiosity + gender + age*parentbelief + age*famreligiosity, data = d_all)
+summary(godcertainty2)
+AIC(godcertainty1, godcertainty2)
+
+tab_model(godcertainty1, godcertainty2)
+
+
+summary(godcertainty2)
+anova(godcertainty1, godcertainty2)
+
+```
+
+### Does God's intervention differ when we orient children using different techniques of framing?
+
+```{r general intervention framing}
+#open ended counts for intervention in various contexts
+
+d_framing <- d_all %>% dplyr::select(contains(c("age", "rgod_happen_earth", "rgod_happen_ever", "rgod_happen_lives", "rpers_happen", "id_num")))
+
+#d_openended$gender <- as.factor(d_openended$gender)
+
+#omitting NAs
+d_framing <- na.omit(d_framing)
+
+# let's convert our data to tall format so we can include all of the same plots on the same figure
+d_framing_reshaped <- melt(d_framing, id.vars= c("age", "id_num"))
+
+d_framing_reshaped$value <- as.factor(d_framing_reshaped$value)
+
+# here, i'm making a dataframe with frequency counts added in
+d_openended_reshaped_counts <- table(d_framing_reshaped$value, d_framing_reshaped$variable, d_framing_reshaped$id_num)
+addmargins(d_openended_reshaped_counts)
+round(prop.table(d_openended_reshaped_counts,2)*100,digits=0)
+df_openended <- as.data.frame(d_openended_reshaped_counts)
+
+
+plot_framing <- ggplot(data = d_framing_reshaped, aes(x = value, fill = variable)) +
+      geom_bar(aes(fill = value),stat = "count",position = "dodge") + 
+      theme_classic() +
+      labs(title="Children's responses to God interventionist framing questions", x ="Item", y = "Counts", fill = "Response") +
+      theme(axis.text.x = element_text(angle=90))
+
+# fixing the x axis labels
+plot_framing <- plot_framing + scale_fill_discrete(labels=c("1" = "No", "2" = "Sometimes", "3" = "Yes", "4" = "I don't know"))
+
+plot_framing
+
+# numbers for happen on earth, no = 7, sometimes = 8, yes = 115, IDK = 4
+# numbers for happen ever on earth, no = 3, sometimes = 12, yes = 114, IDK = 3
+# numbers for happen in people's lives, no = 8, sometimes = 11, yes = 108, IDK = 5
+# numbers for happen ever on earth, no = 23, sometimes = 1, yes = 97, IDK = 11
+
+# let's run t tests for mean differences in the yes/sometimes responses
+
+
+#d_openended2 <- d_all %>% dplyr::select(contains(c("age", "rgod_happen_earth", "rgod_happen_ever", "rgod_happen_lives", "rpers_happen", "id_num")))
+
+#d_openended2 <- dplyr::filter(d_openended2, rgod_happen_earth != 4, rgod_happen_earth != 1) 
+#d_openended2 <- dplyr::filter(d_openended2, rgod_happen_ever != 4, rgod_happen_ever != 1) 
+#d_openended2 <- dplyr::filter(d_openended2, rgod_happen_lives != 4, rgod_happen_lives != 1) 
+#d_openended2 <- dplyr::filter(d_openended2, rpers_happen != 4, rpers_happen != 1) 
+
+plot_framing <- ggplot(d_framing_reshaped, aes(fill=variable, x=value)) + 
+    geom_bar(position="dodge", stat="count") 
+    
+# fixing the x axis labels
+plot_framing <- plot_framing + scale_x_discrete(labels=c("1" = "No", "2" = "Sometimes", "3" = "Yes", "4" = "I don't know")) +
+    scale_fill_brewer(palette= "Paired") +
+  theme_minimal()
+
+
+plot_framing
+
+
+################# question
+## how should i go about testing to see if the personal intervention frequency is statistically different than the other option?
+```
+```{r intervention framing fixed effects model}
+#creating dataframe for intervention framing fem
+d_framingreg <- d_all %>% dplyr::select("control", contains(c("age", "rgod_happen_earth", "rgod_happen_ever", "rgod_happen_lives", "rpers_happen", "id_num", "gender", "famreligiosity", "parentbelief", "school", "interview")))
+
+#want to reshape to see if test q as iv
+d_framing_reshapedreg <- melt(d_framingreg, id.vars= c("age", "id_num", "interview", "gender", "famreligiosity", "control", "parentbelief", "school"))
+
+#modek with everything, lots of errors/warnings/failure to converge
+mod_frame1 <- lmer(interview ~ age + parentbelief + school + famreligiosity + variable + (1|id_num), data = d_framing_reshapedreg)
+vif(mod_frame1)
+tab_model(mod_frame1)
+summary(mod_frame1)
+CI <- conditionIndex(mod_frame1)
+
+#model with removed items to try to make simple
+mod_frame2 <- lmer(interview ~ parentbelief + famreligiosity + variable + (1|id_num), data = d_framing_reshapedreg)
+vif(mod_frame2)
+tab_model(mod_frame2)
+summary(mod_frame2)
+CI <- conditionIndex(mod_frame2)
+
+mod_frame3 <- lmer(interview ~ parentbelief + variable + (1|id_num), data = d_framing_reshapedreg)
+tab_model(mod_frame3)
+summary(mod_frame3)
+CI <- conditionIndex(mod_frame3)
+
+mod_frame4 <- lm(interview ~ parentbelief + variable, data = d_framing_reshapedreg)
+tab_model(mod_frame4)
+summary(mod_frame4)
+
+#mod_frame1 <- lmer(interview ~ age + parentbelief + school + famreligiosity + variable + (1|id_num), 
+#                   data = d_framing_reshapedreg, 
+#                   control = lmerControl(optimizer = "bobyqa", 
+#                                         optCtrl = list(maxfun = 100000),
+#                                         check = ctrl_check_list(warn_singular = FALSE),
+#                                         check.conv = ctrl_check_list(action = "warning"),
+#                                         check.grad = ctrl_check_list(action = "warning")))
+#
+
+```
+
+```{intervention framing reg}
+
+
+```
+
+
+
+```{r summed scores for 4 interview questions, echo=FALSE}
+# we start by creating our null model with a fixed slope and no predictors
+null_model <- lm(interview ~ 1, data = d_all)
+summary(null_model)
+coef(null_model)
+
+reg1 <- lm(interview ~ age, data = d_all)
+summary(reg1)
+coef(reg1)
+
+reg2 <- lm(interview ~ age, data = d_all)
+summary(reg2)
+coef(reg2)
+
+reg3 <- lm(interview ~ age + school + famreligiosity, data = d_all)
+summary(reg3)
+anova(reg3)
+coef(reg3)
+
+reg4 <- lm(interview ~ age + school + famreligiosity + parentbelief + control, data = d_all)
+summary(reg4)
+coef(reg4)
+
+reg5 <- lm(interview ~ age + school + famreligiosity + control + parentbelief + age*famreligiosity*famreligiosity + age*control*control + famreligiosity*control + parentbelief*age + parentbelief*famreligiosity + parentbelief*control, data = d_all)
+summary(reg5)
+coef(reg5)
+
+reg6 <- lm(interview ~ age + famreligiosity + control + famreligiosity*control + parentbelief*control, data = d_all)
+summary(reg6)
+anova(reg6)
+coef(reg6)
+tab_model(reg6)
+
+reg7 <- lm(interview ~ age + famreligiosity + control + parentbelief*age, data = d_all)
+summary(reg7)
+anova(reg7)
+coef(reg7)
+tab_model(reg7)
+
+reg8 <- lm(interview ~ age + famreligiosity + control + parentbelief, data = d_all)
+summary(reg8)
+AIC(reg4)
+AIC(reg5)
+AIC(reg6)
+AIC(reg7)
+AIC(reg8)
+
+tab_model(reg4, reg5, reg6)
+```
+
+```{r summed scores for all vignette domains, echo=FALSE}
+# we start by creating our null model with a fixed slope and no predictors
+null_model <- lm(alldomains ~ 1, data = d_all)
+summary(null_model)
+coef(null_model)
+
+reg1 <- lm(alldomains ~ age, data = d_all)
+summary(reg1)
+coef(reg1)
+
+reg2 <- lm(alldomains ~ age, data = d_all)
+summary(reg2)
+coef(reg2)
+
+reg3 <- lm(alldomains ~ age + school + famreligiosity + control, data = d_all)
+summary(reg3)
+anova(reg3)
+coef(reg3)
+
+reg4 <- lm(alldomains ~ age + school + famreligiosity + parentbelief, data = d_all)
+summary(reg4)
+coef(reg4)
+
+reg5 <- lm(alldomains ~ age + school + parentbelief + control, data = d_all)
+summary(reg5)
+
+tab_model(reg3, reg4, reg5)
+
+reg6 <- lm(alldomains ~ age + school + famreligiosity + control + parentbelief + age*famreligiosity + age*control + famreligiosity*control + parentbelief*age + parentbelief*famreligiosity + parentbelief*control, data = d_all)
+summary(reg6)
+
+```
+
+```{r looking at means diffs in domains}
+longdata <- d_all %>% dplyr::select(starts_with("achieve"), starts_with("health"), starts_with("psych"), starts_with("social"), starts_with("environment"), starts_with("id_num")) 
+
+longdata <- melt(longdata, id.vars= c("id_num"))
+library(ggsignif)
+ggplot(data = longdata, mapping = aes(x = variable, y = value, color = variable)) + 
+  geom_boxplot() +
+  geom_signif(comparisons = list(c("achieve", "health")), y_position = 4.00,
+              map_signif_level=TRUE) +
+  geom_signif(comparisons = list(c("achieve", "psych")), y_position = 4.25,
+              map_signif_level=TRUE) +
+  geom_signif(comparisons = list(c("achieve", "environment")), y_position = 4.5,
+              map_signif_level=TRUE) +
+  geom_signif(comparisons = list(c("social", "health")), y_position = 4.75,
+              map_signif_level=TRUE) +
+  geom_signif(comparisons = list(c("social", "psych")), y_position =5,
+              map_signif_level=TRUE) +
+  theme_minimal() +
+  scale_color_brewer(palette= "Paired") +
+  theme(legend.position = "none") +
+  labs(title = "Intervention Cluster Mean Scores", x = "Domain", y = "Response") + 
+  scale_x_discrete(labels=c("achieve" = "Achievement", "health" = "Health", "social" = "Social", "psych" = "Psychology", "environment" = "Nature"))
+
+# Compute the analysis of variance
+anova1 <- aov(value ~ variable, data = longdata)
+# Summary of the analysis
+summary(anova1)
+TukeyHSD(anova1)
+
+```
+
+# multinomial logistic reg on child choice
+

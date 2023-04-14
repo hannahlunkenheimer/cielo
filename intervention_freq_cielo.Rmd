@@ -38,7 +38,7 @@ d_all <- read_csv("data/Cielo1_MergedFull_practice.csv")
 #View(d_all)
 
 # some participant data needs to be thrown out completely according to the red rows in our CSV file, so let's remove those participants completely here (ID 129, 152, 175, and 277)
-subset(d_all, id_num != "129" & id_num != "152" & id_num != "175" & id_num != "277")
+d_all <- subset(d_all, id_num != "129" & id_num != "152" & id_num != "175" & id_num != "277")
 # great, we've removed our 4 participants completely from our dataframe d_all and now have all of the participants we can use for analyses
 
 ```
@@ -46,89 +46,89 @@ subset(d_all, id_num != "129" & id_num != "152" & id_num != "175" & id_num != "2
 ## Interventionist factor analysis 
 
 ```{r age intervention task fa}
-# here is some of my old code on doing factor analysis
 
-# we're selecting our subset of data and calling it to a new dataframe
-d_fa <- d_all %>% dplyr::select(starts_with("help_"), starts_with("helop_friends")) 
-# if any recoding needs to be done to the whole dataframe, we use this code below: (idk why we need to name a new df, but we do)
+## let's try for confirmatory fa here;
+library(lavaan)
 
-d_fa1 <- d_fa %>% 
-  mutate_at(vars(1:14),
-   ~as.numeric(dplyr::recode(.,
-    "Never"=1,
-    "Only at special times"=2,
-    "Pretty often"=3,
-    "Always"=4,
-    "always" = 4,
-    "IDK" = 5)))
+d_fa <- d_all %>% dplyr::select(starts_with("help_"), contains(c("helop_friends")))
 
+d_fa$help_brave <- ordered(d_fa$help_brave, levels= c("Never", "Only at special times", "Pretty often", "Always"))
+d_fa$help_happy <- ordered(d_fa$help_happy, levels= c("Never", "Only at special times", "Pretty often", "Always") )
+d_fa$help_decide <- ordered(d_fa$help_decide, levels= c("Never", "Only at special times", "Pretty often", "Always"))
+d_fa$help_dreams <- ordered(d_fa$help_dreams, levels= c("Never", "Only at special times", "Pretty often", "Always"))
+d_fa$help_sun <- ordered(d_fa$help_sun, levels= c("Never", "Only at special times", "Pretty often", "Always"))
+d_fa$help_seasons <- ordered(d_fa$help_seasons, levels= c("Never", "Only at special times", "Pretty often", "Always"))
+d_fa$help_plants <- ordered(d_fa$help_plants, levels= c("Never", "Only at special times", "Pretty often", "Always"))
+d_fa$help_sick <- ordered(d_fa$help_sick, levels= c("Never", "Only at special times", "Pretty often", "Always"))
+d_fa$help_safe <- ordered(d_fa$help_safe, levels= c("Never", "Only at special times", "Pretty often", "Always"))
+d_fa$help_find <- ordered(d_fa$help_find, levels= c("Never", "Only at special times", "Pretty often", "Always"))
+d_fa$help_job <- ordered(d_fa$help_job, levels= c("Never", "Only at special times", "Pretty often", "Always"))
+d_fa$help_sports <- ordered(d_fa$help_sports, levels= c("Never", "Only at special times", "Pretty often", "Always"))
+d_fa$help_love <- ordered(d_fa$help_love, levels= c("Never", "Only at special times", "Pretty often", "Always"))
+d_fa$help_friends <- ordered(d_fa$helop_friends, levels= c("Never", "Only at special times", "Pretty often", "Always"))
 
-d_fa1 <- na.omit(d_fa1)
-
-d_fa1 <- d_fa1 %>% 
-       rename("help_friends" = "helop_friends")
-# Extract number of factors
-ev <- eigen(cor(d_fa1)) # get eigenvalues
-#ap <- parallel(subject=nrow(d_fa1),var=ncol(d_fa1),              rep=100,cent=.05)
-#nS <- nScree(x=ev$values, aparallel=ap$eigen$qevpea)
-#plotnScree(nS)
-
-## Exploratory Factor analysis, testing with 3 factors and 2 factors to start, using varimax rotation for all
-fact5 <- factanal(d_fa1, 5, rotation="varimax") 
-print(fact5, digits=2, cutoff=.3, sort=TRUE)
-
-fact4 <- factanal(d_fa1, 4, rotation="varimax") 
-print(fact4, digits=2, cutoff=.3, sort=TRUE)
-
-fact3 <- factanal(d_fa1, 3, rotation="varimax") 
-print(fact3, digits=2, cutoff=.3, sort=TRUE)
-
-fact2 <- factanal(d_fa1, 2, rotation="varimax") 
-print(fact2, digits=2, cutoff=.3, sort=TRUE)
+d_fa$help_brave <- factor(d_fa$help_brave, levels= c("Never", "Only at special times", "Pretty often", "Always"))
+d_fa$help_happy <- factor(d_fa$help_happy, levels= c("Never", "Only at special times", "Pretty often", "Always") )
+d_fa$help_decide <- factor(d_fa$help_decide, levels= c("Never", "Only at special times", "Pretty often", "Always"))
+d_fa$help_dreams <- factor(d_fa$help_dreams, levels= c("Never", "Only at special times", "Pretty often", "Always"))
+d_fa$help_sun <- factor(d_fa$help_sun, levels= c("Never", "Only at special times", "Pretty often", "Always"))
+d_fa$help_seasons <- factor(d_fa$help_seasons, levels= c("Never", "Only at special times", "Pretty often", "Always"))
+d_fa$help_plants <- factor(d_fa$help_plants, levels= c("Never", "Only at special times", "Pretty often", "Always"))
+d_fa$help_sick <- factor(d_fa$help_sick, levels= c("Never", "Only at special times", "Pretty often", "Always"))
+d_fa$help_safe <- factor(d_fa$help_safe, levels= c("Never", "Only at special times", "Pretty often", "Always"))
+d_fa$help_find <- factor(d_fa$help_find, levels= c("Never", "Only at special times", "Pretty often", "Always"))
+d_fa$help_job <- factor(d_fa$help_job, levels= c("Never", "Only at special times", "Pretty often", "Always"))
+d_fa$help_sports <- factor(d_fa$help_sports, levels= c("Never", "Only at special times", "Pretty often", "Always"))
+d_fa$help_love <- factor(d_fa$help_love, levels= c("Never", "Only at special times", "Pretty often", "Always"))
+d_fa$help_friends <- factor(d_fa$help_friends, levels= c("Never", "Only at special times", "Pretty often", "Always"))
 
 
-tab_fa(d_fa1, nmbr.fctr = 5, rotation = "varimax", title = "Factor Analysis",)
-tab_fa(d_fa1, nmbr.fctr = 4, rotation = "varimax", title = "Factor Analysis",)
-tab_fa(d_fa1, nmbr.fctr = 2, rotation = "varimax", title = "Factor Analysis",)
 
-library(psych)
-KMO(d_fa1)
+#d_fa$help_brave <- as.factor(d_fa$help_brave)
+#d_fa$help_happy <- as.factor(d_fa$help_happy)
+#d_fa$help_decide <- as.factor(d_fa$help_decide)
+#d_fa$help_dreams <- as.factor(d_fa$help_dreams)
+#d_fa$help_sun <- as.factor(d_fa$help_sun)
+#d_fa$help_seasons <- as.factor(d_fa$help_seasons)
+#d_fa$help_plants <- as.factor(d_fa$help_plants)
+#d_fa$help_sick <- as.factor(d_fa$help_sick)
+#d_fa$help_safe <- as.factor(d_fa$help_safe)
+#d_fa$help_find <- as.factor(d_fa$help_find)
+#d_fa$help_job <- as.factor(d_fa$help_job)
+#d_fa$help_sports <- as.factor(d_fa$help_sports)
+#d_fa$help_love <- as.factor(d_fa$help_love)
+#d_fa$help_friends <- as.factor(d_fa$helop_friends)
 
-library(stats)
+model <- 'Environment =~ help_sun + help_seasons + help_plants
+          Psychological =~ help_brave + help_happy + help_decide + help_dreams
+          HealthSafety =~ help_sick + help_safe 
+          Achievement =~ help_find + help_job + help_sports
+          Social =~ help_love + help_friends
 
-# Conduct Bartlett's test of sphericity
-bartlett_result <- cortest.bartlett(d_fa1)
+'
 
-# Print the result
-bartlett_result$p.value
-# this is to see if 1 factor is fine, which we'd then do a principal components analysis if this was the best loading
-#fact <- factanal(d_all, 1, rotation="varimax") # show improvement 5, 4, 3
-#print(fact, digits=2, cutoff=.3, sort=TRUE)
+fit <- cfa(model, data = d_fa)
+lavInspect(fit, "cov.lv")
+summary(model)
+summary(fit)
+anova(fit)
 
-# Reduce factors- we do this to see if taking out items makes the loadings more clear. regardless of the outcome we find, it's up to our discretion as researchers on whether or not to omit certain items from a set of questions based on rationale
-# d_all <- d_all %>% select(- Epistemic_4) %>% select(- Epistemic_6) # Why? 
-# fact <- factanal(d_all, 3, rotation="varimax")
-# print(fact, digits=2, cutoff=.3, sort=TRUE) # Optimal model w/3 factors 
+library(semPlot)
 
-# here we're plotting our factors (3 and 2) to visually see where the items are loading
-load4 <- fact4$loadings[,1:4]
-plot(load4,type="n") # set up plot
-text(load4,labels=names(d_fa1),cex=.7) # add variable names
+fa1 <- semPaths(fit, "std", weighted = FALSE, layout = "tree", rotation = 2, label.cex = 1, edge.label.cex = .5, edge.color = "#1a64a5", nCharNodes = 15, sizeMan = 10, sizeLat = 10, sizeMan2 = 3, sizeLat2 = 3, shapeLat = "rectangle", thresholds = FALSE)
 
-load3 <- fact3$loadings[,1:3]
-plot(load3,type="n") # set up plot
-text(load3,labels=names(d_fa1),cex=.7) # add variable names
-
-load5 <- fact5$loadings[,1:5]
-plot(load5,type="n") # set up plot
-text(load5,labels=names(d_fa1),cex=.7) # add variable names
-
-# i can see here that we have two distinct groups (i prefer 2 factors to 3) where the first factor loads seasons, sun, and plants (nature/environment) and the second factor loads god's intervening with people (not the environment)
 ```
+
+
+
+
+
+
+
+
 
 ```{r age intervention factor sums}
 # so, from here, we'll use two factors and create average scores for them
-
 # creating our new dataframe
 d_intervention <- d_all %>% dplyr::select(starts_with("help_"), contains(c("helop_friends", "age", "gender", "control...6", "relig_attendserv", "relig_tradition", "id_num")))
 
