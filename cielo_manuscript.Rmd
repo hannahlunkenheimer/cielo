@@ -198,7 +198,7 @@ d_framingreg <- d_all %>% dplyr::select("control", contains(c("age", "rgod_happe
 #want to reshape to see if test q as iv
 d_framing_reshapedreg <- melt(d_framingreg, id.vars= c("age", "id_num", "interview", "gender", "famreligiosity", "control", "parentbelief", "school"))
 
-#modek with everything, lots of errors/warnings/failure to converge
+#model with everything, lots of errors/warnings/failure to converge
 mod_frame1 <- lmer(interview ~ age + parentbelief + school + famreligiosity + variable + (1|id_num), data = d_framing_reshapedreg)
 vif(mod_frame1)
 tab_model(mod_frame1)
