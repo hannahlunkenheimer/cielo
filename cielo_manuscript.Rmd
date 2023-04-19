@@ -21,7 +21,10 @@ library(car)
 library(DHARMa)
 library(janitor)
 library(reshape2)
-
+library(ggsignif)
+library(stats)
+library(ggpubr)
+library(tidyr)
 # importing the data
 d_all <- read_csv("data/Cielo1_MergedFull_practice.csv")
 
@@ -98,7 +101,8 @@ d_all$psych <- rowSums(d_all[,c(55, 57, 60, 61)]/4) #dreams, happy, brave, decis
 d_all$health <- rowSums(d_all[,c(49, 62)]/2) #sick, safe
 d_all$achieve <- rowSums(d_all[,c(56, 58, 59)]/3) #job, sports, find
 d_all$social <- rowSums(d_all[,c(53, 54)]/2) #love, friends
-d_all$alldomains <- rowSums(d_all[,c(49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62)]/14) 
+d_all$alldomains <- rowSums(d_all[,c(49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62)]/14)
+d_all$people <- rowSums(d_all[,c(55, 57, 60, 61, 49, 62, 56, 58, 59, 53, 54)]/11)
 
 #4 intervention open-ended interview score
 d_all$interview <- rowSums(d_all[,c(43, 45, 47, 64)]/4)
@@ -180,18 +184,49 @@ plot_framing <- ggplot(d_framing_reshaped, aes(fill=variable, x=value)) +
     geom_bar(position="dodge", stat="count") 
     
 # fixing the x axis labels
-plot_framing <- plot_framing + scale_x_discrete(labels=c("1" = "No", "2" = "Sometimes", "3" = "Yes", "4" = "I don't know")) +
+plot_framing <- plot_framing + scale_x_discrete(labels=c("1" = "No", "2" = "Sometimes", "3" = "Yes", "0" = "I don't know")) +
     scale_fill_brewer(palette= "Paired") +
   theme_minimal()
 
-
 plot_framing
 
-
-################# question
-## how should i go about testing to see if the personal intervention frequency is statistically different than the other option?
 ```
-```{r intervention framing fixed effects model}
+```{r chi square to look at differences in personal life intervention vs peoples lives}
+d_personal <- d_all %>% dplyr::select("rpers_happen", "rgod_happen_lives", "rgod_happen_earth", "rgod_happen_ever")
+
+d_personal$rpers_happen <- dplyr::recode(d_personal$rpers_happen, '1' = 1, '2'=1, '3' = 2, '0' = 1)
+d_personal$rgod_happen_lives <- dplyr::recode(d_personal$rgod_happen_lives, '1' = 1, '2'=1, '3' = 2, '0' = 1)
+d_personal$rgod_happen_earth <- dplyr::recode(d_personal$rgod_happen_earth, '1' = 1, '2'=1, '3' = 2, '0' = 1)
+d_personal$rgod_happen_ever <- dplyr::recode(d_personal$rgod_happen_ever, '1' = 1, '2'=1, '3' = 2, '0' = 1)
+
+
+# Convert the data to a long format
+d_personal_long <- d_personal %>%
+  pivot_longer(cols = everything())
+
+# Create a contingency table of the data
+mytable <- table(d_personal_long)
+
+# Run the chi-square test of independence
+result <- chisq.test(mytable)
+
+# View the results
+result
+
+prop.table(mytable, margin = 1)
+
+chisq.test(d_personal$rpers_happen, d_personal$rgod_happen_lives, correct=FALSE)
+chisq.test(d_personal$rpers_happen, d_personal$rgod_happen_earth, correct=FALSE)
+chisq.test(d_personal$rpers_happen, d_personal$rgod_happen_ever, correct=FALSE)
+chisq.test(d_personal$rgod_happen_lives, d_personal$rgod_happen_ever, correct=FALSE)
+chisq.test(d_personal$rgod_happen_lives, d_personal$rgod_happen_earth, correct=FALSE)
+chisq.test(d_personal$rgod_happen_earth, d_personal$rgod_happen_ever, correct=FALSE)
+
+# this is what i reported in the paper
+chisq.test(d_personal_long$name, d_personal_long$value, correct=FALSE)
+```
+### How do I do this? Mixed effects model
+```{r intervention framing mixed effects model}
 #creating dataframe for intervention framing fem
 d_framingreg <- d_all %>% dplyr::select("control", contains(c("age", "rgod_happen_earth", "rgod_happen_ever", "rgod_happen_lives", "rpers_happen", "id_num", "gender", "famreligiosity", "parentbelief", "school", "interview")))
 
@@ -203,19 +238,19 @@ mod_frame1 <- lmer(interview ~ age + parentbelief + school + famreligiosity + va
 vif(mod_frame1)
 tab_model(mod_frame1)
 summary(mod_frame1)
-CI <- conditionIndex(mod_frame1)
+#CI <- conditionIndex(mod_frame1)
 
 #model with removed items to try to make simple
 mod_frame2 <- lmer(interview ~ parentbelief + famreligiosity + variable + (1|id_num), data = d_framing_reshapedreg)
 vif(mod_frame2)
 tab_model(mod_frame2)
 summary(mod_frame2)
-CI <- conditionIndex(mod_frame2)
+#CI <- conditionIndex(mod_frame2)
 
 mod_frame3 <- lmer(interview ~ parentbelief + variable + (1|id_num), data = d_framing_reshapedreg)
 tab_model(mod_frame3)
 summary(mod_frame3)
-CI <- conditionIndex(mod_frame3)
+#CI <- conditionIndex(mod_frame3)
 
 mod_frame4 <- lm(interview ~ parentbelief + variable, data = d_framing_reshapedreg)
 tab_model(mod_frame4)
@@ -232,62 +267,6 @@ summary(mod_frame4)
 
 ```
 
-```{intervention framing reg}
-
-
-```
-
-
-
-```{r summed scores for 4 interview questions, echo=FALSE}
-# we start by creating our null model with a fixed slope and no predictors
-null_model <- lm(interview ~ 1, data = d_all)
-summary(null_model)
-coef(null_model)
-
-reg1 <- lm(interview ~ age, data = d_all)
-summary(reg1)
-coef(reg1)
-
-reg2 <- lm(interview ~ age, data = d_all)
-summary(reg2)
-coef(reg2)
-
-reg3 <- lm(interview ~ age + school + famreligiosity, data = d_all)
-summary(reg3)
-anova(reg3)
-coef(reg3)
-
-reg4 <- lm(interview ~ age + school + famreligiosity + parentbelief + control, data = d_all)
-summary(reg4)
-coef(reg4)
-
-reg5 <- lm(interview ~ age + school + famreligiosity + control + parentbelief + age*famreligiosity*famreligiosity + age*control*control + famreligiosity*control + parentbelief*age + parentbelief*famreligiosity + parentbelief*control, data = d_all)
-summary(reg5)
-coef(reg5)
-
-reg6 <- lm(interview ~ age + famreligiosity + control + famreligiosity*control + parentbelief*control, data = d_all)
-summary(reg6)
-anova(reg6)
-coef(reg6)
-tab_model(reg6)
-
-reg7 <- lm(interview ~ age + famreligiosity + control + parentbelief*age, data = d_all)
-summary(reg7)
-anova(reg7)
-coef(reg7)
-tab_model(reg7)
-
-reg8 <- lm(interview ~ age + famreligiosity + control + parentbelief, data = d_all)
-summary(reg8)
-AIC(reg4)
-AIC(reg5)
-AIC(reg6)
-AIC(reg7)
-AIC(reg8)
-
-tab_model(reg4, reg5, reg6)
-```
 
 ```{r summed scores for all vignette domains, echo=FALSE}
 # we start by creating our null model with a fixed slope and no predictors
@@ -308,14 +287,9 @@ summary(reg3)
 anova(reg3)
 coef(reg3)
 
-reg4 <- lm(alldomains ~ age + school + famreligiosity + parentbelief, data = d_all)
+reg4 <- lm(alldomains ~ age + school + famreligiosity + parentbelief + control, data = d_all)
 summary(reg4)
 coef(reg4)
-
-reg5 <- lm(alldomains ~ age + school + parentbelief + control, data = d_all)
-summary(reg5)
-
-tab_model(reg3, reg4, reg5)
 
 reg6 <- lm(alldomains ~ age + school + famreligiosity + control + parentbelief + age*famreligiosity + age*control + famreligiosity*control + parentbelief*age + parentbelief*famreligiosity + parentbelief*control, data = d_all)
 summary(reg6)
@@ -323,12 +297,19 @@ summary(reg6)
 ```
 
 ```{r looking at means diffs in domains}
-longdata <- d_all %>% dplyr::select(starts_with("achieve"), starts_with("health"), starts_with("psych"), starts_with("social"), starts_with("environment"), starts_with("id_num")) 
+d_domain <- d_all %>% dplyr::select(starts_with("achieve"), starts_with("health"), starts_with("psych"), starts_with("social"), starts_with("environment"), starts_with("id_num"), "age", "people", "alldomains") 
 
-longdata <- melt(longdata, id.vars= c("id_num"))
-library(ggsignif)
-ggplot(data = longdata, mapping = aes(x = variable, y = value, color = variable)) + 
-  geom_boxplot() +
+d_domain2 <- d_all %>% dplyr::select(starts_with("achieve"), starts_with("health"), starts_with("psych"), starts_with("social"), starts_with("environment"), starts_with("id_num")) 
+
+d_domain_long2 <- melt(d_domain2, id.vars= c("id_num"))
+
+d_domain_long2$variable <- factor(d_domain_long2$variable, levels = c("achieve", "social", "health", "psych", "environment"))
+
+domainclusters <- ggplot(data = d_domain_long2, mapping = aes(x = variable, y = value, color = variable)) + 
+  geom_violin() + 
+  stat_summary(fun.y = mean, geom = "errorbar", aes(ymax = ..y.., ymin = ..y..),
+                 width = .7 , size = 1, linetype = "solid") +
+  geom_jitter(width = .2, height = .2, alpha=.3) +
   geom_signif(comparisons = list(c("achieve", "health")), y_position = 4.00,
               map_signif_level=TRUE) +
   geom_signif(comparisons = list(c("achieve", "psych")), y_position = 4.25,
@@ -342,16 +323,108 @@ ggplot(data = longdata, mapping = aes(x = variable, y = value, color = variable)
   theme_minimal() +
   scale_color_brewer(palette= "Paired") +
   theme(legend.position = "none") +
-  labs(title = "Intervention Cluster Mean Scores", x = "Domain", y = "Response") + 
+  labs(title = "Intervention Cluster Mean Scores", x = "Domain", y = "Intervention scope") + 
   scale_x_discrete(labels=c("achieve" = "Achievement", "health" = "Health", "social" = "Social", "psych" = "Psychology", "environment" = "Nature"))
+domainclusters
+ggsave("domainclusters.png", domainclusters, width = 6, height = 4, dpi = 300)
 
 # Compute the analysis of variance
-anova1 <- aov(value ~ variable, data = longdata)
+anova1 <- aov(value ~ variable, data = d_domain_long)
 # Summary of the analysis
 summary(anova1)
 TukeyHSD(anova1)
 
 ```
 
-# multinomial logistic reg on child choice
+```{r age differences in intervention by person nature and all domains}
 
+# how should we visualize this data?
+g_environment <- ggplot(d_domain,aes(y=environment,x=age)) +
+  geom_point() +
+  geom_jitter() +
+  geom_smooth(method="lm", color = "#E69F00") +
+  theme_minimal()
+
+# plotting our data without reg lines
+g_environment
+
+g_people <- ggplot(d_domain,aes(y=people,x=age)) +
+  geom_point() +
+  geom_jitter() +
+  geom_smooth(method="lm", color = "#56B4E9") +
+  theme_minimal()
+
+# plotting our data without reg lines
+g_people
+
+g_total <- ggplot(d_domain,aes(y=alldomains,x=age)) +
+  geom_point() +
+  geom_jitter() +
+  geom_smooth(method="lm", color = "#009E73") +
+  theme_minimal()
+
+# plotting our data without reg lines
+g_total
+
+#plotting regression lines on the same figure
+
+#colors <- c("environment" = "#fdbf6f", "people" = "e2251d", "total" = "#fc9c9c")
+
+
+g_allinter <- ggplot(d_domain, aes(x = age, y = alldomains)) + 
+  geom_jitter(aes(age, environment, color = "Nature"), width = .2, height = .2, alpha=.3) +
+  geom_smooth(aes(age, environment, color = "Nature"), method = "glm", se = FALSE) +
+  geom_jitter(aes(age, social, color = "Social"), width = .2, height = .2, alpha=.3) +
+  geom_smooth(aes(age, social, color = "Social"), method = "glm", se = FALSE) +
+  geom_jitter(aes(age, psych, color = "Psych"), width = .2, height = .2, alpha=.3) +
+  geom_smooth(aes(age, psych, color = "Psych"), method = "glm", se = FALSE) +
+  geom_jitter(aes(age, achieve, color = "Achieve"), width = .2, height = .2, alpha=.3) +
+  geom_smooth(aes(age, achieve, color = "Achieve"), method = "glm", se = FALSE) +
+  geom_jitter(aes(age, health, color = "Health"), width = .2, height = .2, alpha=.3) +
+  geom_smooth(aes(age, health, color = "Health"), method = "glm", se = FALSE) +
+  theme_minimal() +
+  labs(title="Children's responses to intervention frequency questions by domain cluster", x = "Age", y = "Intervention score", color = "Domain") +
+  theme(axis.text.x = element_text(angle=01)) +
+  scale_color_manual(values = c("#a6cfe3", "#2177b4", "#b7dd95", "#34a02b", "#fc9c9c"), name = "Domain",
+                        limits = c("Achieve", "Social", "Health", "Psych", "Nature"))
+
+
+g_allinter
+ggsave("devdomainclusters.png", g_allinter, width = 6, height = 4, dpi = 300)
+
+# geom_jitter(aes(age, alldomains, color = "Total"), width = .2, height = .2, alpha=.4) +
+# geom_smooth(aes(age, alldomains, color = "Total"), method = "glm", se = FALSE) +
+
+mod_environment <- lm(environment ~ age + parentbelief + famreligiosity + control, data = d_all)
+summary(mod_environment)
+mod_social <- lm(social ~ age + parentbelief + famreligiosity + control, data = d_all)
+summary(mod_social)
+mod_health <- lm(health ~ age + parentbelief + famreligiosity + control, data = d_all)
+summary(mod_health)
+mod_achieve <- lm(achieve ~ age + parentbelief + famreligiosity + control, data = d_all)
+summary(mod_achieve)
+mod_psych <- lm(psych ~ age + parentbelief + famreligiosity + control, data = d_all)
+summary(mod_psych) 
+mod_all <- lm(alldomains ~ age + famreligiosity + parentbelief + control, data = d_all)
+summary(mod_all)
+
+domainmanuscript <- tab_model(mod_environment, mod_achieve, mod_health, mod_social, mod_psych)
+
+domainmanuscript
+
+
+```
+
+# How do I do this? multinomial logistic reg on child choice
+```{r multinomial logreg for child choice}
+library(nnet)
+d_explicitconcepts <- d_all %>% dplyr::select("control", contains(c("age", "gender", "famreligiosity", "parentbelief", "explicit_concepts", "school")))
+d_explicitconcepts <- na.omit(d_explicitconcepts)
+
+d_explicitconcepts$explicit_concepts <- recode_factor(d_explicitconcepts$explicit_concepts, "Jordan, who says God doesn't really make things happen in people's lives." = "Jordan", "Riley, who says God makes things happen in people's lives, but only at special times." = "Riley", "Riley, who says God makes things happen in people's lives, but only special times." = "Riley", "Sam, who says God makes things happen in people's lives, almost every day." = "Sam")
+
+d_explicitconcepts$explicit_concepts <- as.factor(d_explicitconcepts$explicit_concepts)
+
+model <- multinom(explicit_concepts ~ age + control + famreligiosity + parentbelief, data = d_explicitconcepts)
+
+```
