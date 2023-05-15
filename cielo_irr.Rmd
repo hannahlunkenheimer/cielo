@@ -10,41 +10,25 @@ knitr::opts_chunk$set(echo = TRUE)
 library(psych)
 library(irr)
 library(readr)
+library(reshape2)
 
 d_paola <- readr::read_csv("~/Documents/GitHub/cielo/data/paolacoding_irr_cielo copy.csv")
 d_helen <- readr::read_csv("~/Documents/GitHub/cielo/data/helencoding_irr_cielo copy.csv")
 
-#d_paola <- na.omit(d_paola)
-#d_helen <- na.omit(d_helen)
-
-#paola<- as.vector(d_paola)
-#helen<- as.vector(d_helen)
 ```
 
-## R Markdown
+```{r irr}
+d_paola <- melt(d_paola, "V1")
+d_helen <- melt(d_helen, "V1")
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
 total <- merge(d_paola, d_helen,by="V1")
-#total = subset(total, select = -c(pid) )
 
-for (dimension in 1:78) {
-    v = paste0("V", dimension)
-    print(irr::kappa2(cbind(d_helen[, v], d_paola[, v])))
-}
+#for (dimension in 1:78) {
+#    v = paste0("V", dimension)
+#    print(irr::kappa2(cbind(d_helen[, v], d_paola[, v])))
+#}
 
 #overall IRR is .92
+kappa2(total[, c("value.x", "value.y")], weight = "unweighted")
+
 ```
-
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

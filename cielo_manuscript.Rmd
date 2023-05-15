@@ -56,6 +56,9 @@ d_all$godcertainty <- ifelse(d_all$exist_sure_god == "A little sure", 1,
 d_all$relig_describe_god <- dplyr::recode(d_all$relig_describe_god, 'I do not believe in God.' = 1, 'A non-interventionist God; one who does not attempt to influence events in human life.' = 2, 'A God who used to intervene in historical or biblical times, but is not particularly involved in the workings of modern life.' = 3, 'An interventionist God; one who is sometimes involved in the workings of modern life.' = 4, 'An interventionist God; one who is intimately involved in the workings of modern life.' = 5)
 d_all$relig_intervene <- dplyr::recode(d_all$relig_attendserv, 'Absolutely not' = 1, 'Probably not'=2, 'Unsure' = 3, 'Probably yes' = 4, 'Absolutely yes' = 5)
 
+d_all <- d_all %>%
+  mutate(faminfluence = (relig_attendserv + relig_tradition + relig_describe_god + relig_intervene) / 4)
+
 # god's intervention columns 
 d_all <- d_all %>% 
   mutate_at(vars(49:62),
@@ -66,6 +69,7 @@ d_all <- d_all %>%
     "Always"= 4,
     "always" = 4,
     "IDK" = 5)))
+
 
 #binary focal interview questions
 d_all <- d_all %>% 
@@ -104,7 +108,7 @@ d_all$social <- rowSums(d_all[,c(53, 54)]/2) #love, friends
 d_all$alldomains <- rowSums(d_all[,c(49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62)]/14)
 d_all$people <- rowSums(d_all[,c(55, 57, 60, 61, 49, 62, 56, 58, 59, 53, 54)]/11)
 
-#4 intervention open-ended interview score
+#4 intervention open-ended interview score (0)
 d_all$interview <- rowSums(d_all[,c(43, 45, 47, 64)]/4)
 
 #in case i need code to filter out IDK responses from analyses
@@ -112,27 +116,63 @@ d_all$interview <- rowSums(d_all[,c(43, 45, 47, 64)]/4)
 
 ```
 
-### Does certainty in God's being real differ across age?
+## Does certainty in God's being real differ across age?
 
 ```{r God certainty changes in age?}
 #creating a plot and regressions to see if there are any changes in real/pretend god certainty 
-godcertainty1 <- lm(godcertainty ~ age + parentbelief + famreligiosity + gender + age*parentbelief + age*famreligiosity, data = d_all)
-summary(godcertainty1)
-godcertainty2 <- lm(godcertainty ~ parentbelief + famreligiosity + gender + age*parentbelief + age*famreligiosity, data = d_all)
-summary(godcertainty2)
-AIC(godcertainty1, godcertainty2)
+reg_godcertainty1 <- lm(godcertainty ~ age, data = d_all)
+summary(reg_godcertainty1)
+tab_model(reg_godcertainty1)
+```
 
-tab_model(godcertainty1, godcertainty2)
+## Does God's intervention differ when we orient children using different framing?
 
+```{r general intervention framing}
+library(apaTables)
+library(sjPlot)
+d_framingcorr <- d_all %>% dplyr::select(contains(c("rgod_happen_earth", "rgod_happen_ever", "rgod_happen_lives", "rpers_happen")))
 
-summary(godcertainty2)
-anova(godcertainty1, godcertainty2)
+d_framingcorr <- na.omit(d_framingcorr)
+
+head(d_framingcorr)
+
+tab_corr(d_framingcorr,
+         p.numeric = TRUE,
+         triangle = "lower")
 
 ```
 
-### Does God's intervention differ when we orient children using different techniques of framing?
+```{r correlation bw intervention framing and domain intervention}
+library(apaTables)
+library(sjPlot)
+d_interventioncorr <- d_all %>% dplyr::select(contains(c("interview", "alldomains")))
 
-```{r general intervention framing}
+d_interventioncorr <- na.omit(d_interventioncorr)
+
+head(d_interventioncorr)
+
+tab_corr(d_interventioncorr,
+         p.numeric = TRUE,
+         triangle = "lower")
+
+```
+
+```{r correlation bw intervention framing and domain intervention}
+library(apaTables)
+library(sjPlot)
+d_religcorr <- d_all %>% dplyr::select(contains(c("parentbelief", "famreligiosity")))
+
+d_religcorr <- na.omit(d_religcorr)
+
+head(d_religcorr)
+
+tab_corr(d_religcorr,
+         p.numeric = TRUE,
+         triangle = "lower")
+
+```
+
+```{r framing}
 #open ended counts for intervention in various contexts
 
 d_framing <- d_all %>% dplyr::select(contains(c("age", "rgod_happen_earth", "rgod_happen_ever", "rgod_happen_lives", "rpers_happen", "id_num")))
@@ -161,7 +201,7 @@ plot_framing <- ggplot(data = d_framing_reshaped, aes(x = value, fill = variable
       theme(axis.text.x = element_text(angle=90))
 
 # fixing the x axis labels
-plot_framing <- plot_framing + scale_fill_discrete(labels=c("1" = "No", "2" = "Sometimes", "3" = "Yes", "4" = "I don't know"))
+plot_framing <- plot_framing + scale_fill_discrete(labels=c("1" = "No", "2" = "Sometimes", "3" = "Yes", "0" = "I don't know"))
 
 plot_framing
 
@@ -191,119 +231,275 @@ plot_framing <- plot_framing + scale_x_discrete(labels=c("1" = "No", "2" = "Some
 plot_framing
 
 ```
+
+## Are children more likely to report that God intervenes in people's lives versus their own life?
+
 ```{r chi square to look at differences in personal life intervention vs peoples lives}
 d_personal <- d_all %>% dplyr::select("rpers_happen", "rgod_happen_lives", "rgod_happen_earth", "rgod_happen_ever")
 
-d_personal$rpers_happen <- dplyr::recode(d_personal$rpers_happen, '1' = 1, '2'=1, '3' = 2, '0' = 1)
-d_personal$rgod_happen_lives <- dplyr::recode(d_personal$rgod_happen_lives, '1' = 1, '2'=1, '3' = 2, '0' = 1)
-d_personal$rgod_happen_earth <- dplyr::recode(d_personal$rgod_happen_earth, '1' = 1, '2'=1, '3' = 2, '0' = 1)
-d_personal$rgod_happen_ever <- dplyr::recode(d_personal$rgod_happen_ever, '1' = 1, '2'=1, '3' = 2, '0' = 1)
+table(d_personal$rgod_happen_earth)
+table(d_personal$rgod_happen_ever)
+table(d_personal$rgod_happen_lives)
+table(d_personal$rpers_happen)
+
+filtered_data <- d_personal %>%
+  filter_at(vars(starts_with("rpers"), starts_with("rgod")),
+            all_vars(. != 0))
+
+#d_personal$rpers_happen <- dplyr::recode(d_personal$rpers_happen, '1' = 1, '2'=1, #'3' = 2, '0' = 1)
+#d_personal$rgod_happen_lives <- dplyr::recode(d_personal$rgod_happen_lives, '1' = #1, '2'=1, '3' = 2, '0' = 1)
+#d_personal$rgod_happen_earth <- dplyr::recode(d_personal$rgod_happen_earth, '1' = #1, '2'=1, '3' = 2, '0' = 1)
+#d_personal$rgod_happen_ever <- dplyr::recode(d_personal$rgod_happen_ever, '1' = 1, #'2'=1, '3' = 2, '0' = 1)
 
 
 # Convert the data to a long format
-d_personal_long <- d_personal %>%
+d_personal_long <- filtered_data %>%
   pivot_longer(cols = everything())
 
 # Create a contingency table of the data
-mytable <- table(d_personal_long)
-
-# Run the chi-square test of independence
-result <- chisq.test(mytable)
-
-# View the results
-result
-
-prop.table(mytable, margin = 1)
-
-chisq.test(d_personal$rpers_happen, d_personal$rgod_happen_lives, correct=FALSE)
-chisq.test(d_personal$rpers_happen, d_personal$rgod_happen_earth, correct=FALSE)
-chisq.test(d_personal$rpers_happen, d_personal$rgod_happen_ever, correct=FALSE)
-chisq.test(d_personal$rgod_happen_lives, d_personal$rgod_happen_ever, correct=FALSE)
-chisq.test(d_personal$rgod_happen_lives, d_personal$rgod_happen_earth, correct=FALSE)
-chisq.test(d_personal$rgod_happen_earth, d_personal$rgod_happen_ever, correct=FALSE)
+#mytable <- table(d_personal_long)
+#
+## Run the chi-square test of independence
+#result <- chisq.test(mytable)
+#
+## View the results
+#result
+#
+#prop.table(mytable, margin = 1)
+#
+#chisq.test(d_personal$rpers_happen, d_personal$rgod_happen_lives, #correct=FALSE)
+#chisq.test(d_personal$rpers_happen, d_personal$rgod_happen_earth, #correct=FALSE)
+#chisq.test(d_personal$rpers_happen, d_personal$rgod_happen_ever, correct=FALSE)
+#chisq.test(d_personal$rgod_happen_lives, d_personal$rgod_happen_ever, #correct=FALSE)
+#chisq.test(d_personal$rgod_happen_lives, d_personal$rgod_happen_earth, #correct=FALSE)
+#chisq.test(d_personal$rgod_happen_earth, d_personal$rgod_happen_ever, #correct=FALSE)
 
 # this is what i reported in the paper
-chisq.test(d_personal_long$name, d_personal_long$value, correct=FALSE)
+#chisq.test(d_personal_long$name, d_personal_long$value, correct=FALSE)
+
+anova_personal <- aov(value ~ name, data = d_personal_long)
+summary(anova_personal)
+TukeyHSD(anova_personal)
 ```
-### How do I do this? Mixed effects model
+
+# Creating a DAG for my regs
+
+```{r dag stuff}
+library(dagitty)
+library(ggdag)
+
+dag <- dagitty("dag {
+  Fam_religiosity -> Child_intervention_beliefs
+  Fam_religiosity -> Parent_intervention_beliefs
+  Parent_intervention_beliefs -> Child_intervention_beliefs
+  Age -> Control
+  Age -> Child_intervention_beliefs
+  Control -> Child_intervention_beliefs
+}")
+
+plot(dag)
+
+interventiondag <- dagify(
+  interview ~ famreligiosity + parentbelief + age + control,
+  parentbelief ~ famreligiosity,
+  control ~ age,
+  labels = c(
+    "interview" = "Child\n intervention\n beliefs",
+    "famreligiosity" = "Family\n religiosity",
+    "parentbelief" = "Parent\n intervention\n beliefs",
+    "age" = "Age",
+    "control" = "Perceived\n control"
+  ),
+  exposure = "parentbelief",
+  outcome = "interview"
+)
+
+ggdag(interventiondag, text = FALSE, use_labels = "label") +
+  theme_void() + 
+  geom_dag_text(nudge_x = 1, nudge_y = 1) +
+  geom_dag_edges_link(
+        arrow = grid::arrow(length = grid::unit(10, "pt"), type = "closed"),
+        position = "identity",
+        inherit.aes = TRUE,
+  )
+
+```
+
+How do I do this? Mixed effects model
+
+Adding each item score before summing 
+1. could stratify the model
+2. could get rid of control in the model because it's not directly makes - direct effect of parent beliefs
+  - indirect effect of control
+  - include separate models for fam religiosity, parent belief, and control
+3. can do sum scores not be helpful to do a mixed effects
+4. can do a mixed effects model when have individual question types
+
+## Intervention framing task
 ```{r intervention framing mixed effects model}
 #creating dataframe for intervention framing fem
-d_framingreg <- d_all %>% dplyr::select("control", contains(c("age", "rgod_happen_earth", "rgod_happen_ever", "rgod_happen_lives", "rpers_happen", "id_num", "gender", "famreligiosity", "parentbelief", "school", "interview")))
+d_framingreg <- d_all %>% dplyr::select("control", contains(c("age", "rgod_happen_earth", "rgod_happen_ever", "rgod_happen_lives", "rpers_happen", "id_num", "gender", "famreligiosity", "parentbelief", "school", "interview", "faminfluence")))
 
-#want to reshape to see if test q as iv
-d_framing_reshapedreg <- melt(d_framingreg, id.vars= c("age", "id_num", "interview", "gender", "famreligiosity", "control", "parentbelief", "school"))
+d_framingreg <- d_framingreg %>%
+  filter_at(vars(starts_with("rpers"), starts_with("rgod")),
+            all_vars(. != 0))
 
-#model with everything, lots of errors/warnings/failure to converge
-mod_frame1 <- lmer(interview ~ age + parentbelief + school + famreligiosity + variable + (1|id_num), data = d_framing_reshapedreg)
-vif(mod_frame1)
-tab_model(mod_frame1)
-summary(mod_frame1)
-#CI <- conditionIndex(mod_frame1)
+# ARE THERE DEVELOPMENTAL DIFFERENCES IN RESPONSES BY AGE? 
+reg_frame4 <- lm(interview ~ age, data = d_framingreg)
+summary(reg_frame4)
+reg_frame4.1 <- lm(rgod_happen_ever ~ age, data = d_framingreg)
+summary(reg_frame4.1) 
+reg_frame4.2 <- lm(rgod_happen_earth ~ age, data = d_framingreg)
+summary(reg_frame4.2)
+reg_frame4.3 <- lm(rgod_happen_lives ~ age, data = d_framingreg)
+summary(reg_frame4.3)
+reg_frame4.4 <- lm(rpers_happen ~ age, data = d_framingreg) 
+summary(reg_frame4.4)
+tab_model(reg_frame4, reg_frame4.1, reg_frame4.2, reg_frame4.3, reg_frame4.4)
 
-#model with removed items to try to make simple
-mod_frame2 <- lmer(interview ~ parentbelief + famreligiosity + variable + (1|id_num), data = d_framing_reshapedreg)
-vif(mod_frame2)
-tab_model(mod_frame2)
-summary(mod_frame2)
-#CI <- conditionIndex(mod_frame2)
+# DOES FAMILY RELIGIOSITY PREDICT INTERVENTION FRAMING SCORES? 
+reg_frame1 <- lm(interview ~ famreligiosity, data = d_framingreg)
+summary(reg_frame1)
+reg_frame1.1 <- lm(rgod_happen_ever ~ famreligiosity, data = d_framingreg)
+summary(reg_frame1.1) 
+reg_frame1.2 <- lm(rgod_happen_earth ~ famreligiosity, data = d_framingreg)
+summary(reg_frame1.2)
+reg_frame1.3 <- lm(rgod_happen_lives ~ famreligiosity, data = d_framingreg)
+summary(reg_frame1.3)
+reg_frame1.4 <- lm(rpers_happen ~ famreligiosity, data = d_framingreg)
+summary(reg_frame1.4)
+tab_model(reg_frame1, reg_frame1.1, reg_frame1.2, reg_frame1.3, reg_frame1.4, reg_frame1.5)
+# checking for interaction effects here
+reg_frame1.5 <- lm(rpers_happen ~ famreligiosity + famreligiosity*age, data = d_framingreg)
 
-mod_frame3 <- lmer(interview ~ parentbelief + variable + (1|id_num), data = d_framing_reshapedreg)
-tab_model(mod_frame3)
-summary(mod_frame3)
-#CI <- conditionIndex(mod_frame3)
+# DOES PARENT BELIEF PREDICT INTERVENTION FRAMING SCORES? 
+reg_frame2 <- lm(interview ~ parentbelief + famreligiosity, data = d_framingreg)
+summary(reg_frame2)
+reg_frame2.1 <- lm(rgod_happen_ever ~ parentbelief + famreligiosity, data = d_framingreg)
+summary(reg_frame2.1) 
+reg_frame2.2 <- lm(rgod_happen_earth ~ parentbelief + famreligiosity, data = d_framingreg)
+summary(reg_frame2.2)
+reg_frame2.3 <- lm(rgod_happen_lives ~ parentbelief + famreligiosity, data = d_framingreg)
+summary(reg_frame2.3)
+reg_frame2.4 <- lm(rpers_happen ~ parentbelief + famreligiosity, data = d_framingreg)
+reg_frame2.5 <- lm(rpers_happen ~ parentbelief + famreligiosity + parentbelief*age, data = d_framingreg)
+summary(reg_frame2.5)
 
-mod_frame4 <- lm(interview ~ parentbelief + variable, data = d_framing_reshapedreg)
-tab_model(mod_frame4)
-summary(mod_frame4)
+summary(reg_frame2.4)
+tab_model(reg_frame2, reg_frame2.1, reg_frame2.2, reg_frame2.3, reg_frame2.4)
 
-#mod_frame1 <- lmer(interview ~ age + parentbelief + school + famreligiosity + variable + (1|id_num), 
-#                   data = d_framing_reshapedreg, 
-#                   control = lmerControl(optimizer = "bobyqa", 
-#                                         optCtrl = list(maxfun = 100000),
-#                                         check = ctrl_check_list(warn_singular = FALSE),
-#                                         check.conv = ctrl_check_list(action = "warning"),
-#                                         check.grad = ctrl_check_list(action = "warning")))
-#
+# DOES FAMILY INFLUENCE LUMPED TOGETHER PREDICT INTERVENTION FRAMING?
+reg_frame20 <- lm(interview ~ faminfluence, data = d_framingreg)
+summary(reg_frame20)
+reg_frame21 <- lm(rgod_happen_ever ~ faminfluence, data = d_framingreg)
+summary(reg_frame21)
+reg_frame22 <- lm(rgod_happen_earth ~ faminfluence, data = d_framingreg)
+reg_frame23 <- lm(rgod_happen_lives ~ faminfluence, data = d_framingreg)
+reg_frame24 <- lm(rpers_happen ~ faminfluence, data = d_framingreg)
+tab_model(reg_frame20, reg_frame21, reg_frame22, reg_frame23, reg_frame24)
 
+
+# DOES PERCEIVED CONTROL PREDICT INTERVENTION FRAMING SCORES? 
+reg_frame3 <- lm(interview ~ control + age, data = d_framingreg)
+summary(reg_frame3)
+reg_frame3.1 <- lm(rgod_happen_ever ~ control + age, data = d_framingreg)
+summary(reg_frame3.1) 
+reg_frame3.2 <- lm(rgod_happen_earth ~ control + age, data = d_framingreg)
+summary(reg_frame3.2)
+reg_frame3.3 <- lm(rgod_happen_lives ~ control + age, data = d_framingreg)
+summary(reg_frame3.3)
+reg_frame3.4 <- lm(rpers_happen ~ control + age, data = d_framingreg)
+summary(reg_frame3.4)
+tab_model(reg_frame3, reg_frame3.1, reg_frame3.2, reg_frame3.3, reg_frame3.4)
+reg_frame3.5 <- lm(interview ~ control + age + control*age, data = d_framingreg)
+summary(reg_frame3.5)
 ```
 
 
 ```{r summed scores for all vignette domains, echo=FALSE}
-# we start by creating our null model with a fixed slope and no predictors
-null_model <- lm(alldomains ~ 1, data = d_all)
-summary(null_model)
-coef(null_model)
+#creating dataframe for intervention framing fem
+d_domains <- d_all %>% dplyr::select("control", contains(c("age", "environment", "social", "psych", "achieve", "id_num", "gender", "famreligiosity", "parentbelief", "health", "alldomains")))
 
-reg1 <- lm(alldomains ~ age, data = d_all)
-summary(reg1)
-coef(reg1)
+reg_control <- lm(control ~ age, data = d_domains)
+summary(reg_control)
 
-reg2 <- lm(alldomains ~ age, data = d_all)
-summary(reg2)
-coef(reg2)
+# ARE THERE DEVELOPMENTAL DIFFERENCES IN RESPONSES BY AGE FOR DOMAINS? 
+reg_domain4 <- lm(alldomains ~ age, data = d_domains)
+summary(reg_domain4)
+reg_domain4.1 <- lm(environment ~ age, data = d_domains)
+summary(reg_domain4.1) 
+reg_domain4.2 <- lm(social ~ age, data = d_domains)
+summary(reg_domain4.2)
+reg_domain4.3 <- lm(achieve ~ age, data = d_domains)
+summary(reg_domain4.3)
+reg_domain4.4 <- lm(health ~ age, data = d_domains) 
+summary(reg_domain4.4)
+reg_domain4.5 <- lm(psych ~ age, data = d_domains) 
+summary(reg_domain4.5)
+tab_model(reg_domain4, reg_domain4.1, reg_domain4.2, reg_domain4.3, reg_domain4.4, reg_domain4.5)
 
-reg3 <- lm(alldomains ~ age + school + famreligiosity + control, data = d_all)
-summary(reg3)
-anova(reg3)
-coef(reg3)
+# DOES PERCEIVED CONTROL PREDICT INTERVENTION DOMAIN SCORES? 
+reg_domain3 <- lm(alldomains ~ control + age, data = d_domains)
+reg_domain_nature3 <- lm(environment ~ control + age, data = d_domains)
+reg_domain_social3 <- lm(social ~ control + age, data = d_domains)
+reg_domain_achieve3 <- lm(achieve ~ control + age, data = d_domains)
+reg_domain_health3 <- lm(health ~ control + age, data = d_domains)
+reg_domain_psych3 <- lm(psych ~ control + age, data = d_domains)
+reg_domain_3.1 <- lm(environment ~ control + age + age*control, data = d_domains)
+summary(reg_domain_3.1)
+summary(reg_domain3)
+# control doesn't predict any of the domains separately, either
+summary(reg_domain_nature3)
+summary(reg_domain_social3)
+summary(reg_domain_achieve3)
+summary(reg_domain_health3)
+summary(reg_domain_psych3)
 
-reg4 <- lm(alldomains ~ age + school + famreligiosity + parentbelief + control, data = d_all)
-summary(reg4)
-coef(reg4)
+tab_model(reg_domain3, reg_domain_nature3, reg_domain_social3, reg_domain_achieve3, reg_domain_health3, reg_domain_psych3)
 
-reg6 <- lm(alldomains ~ age + school + famreligiosity + control + parentbelief + age*famreligiosity + age*control + famreligiosity*control + parentbelief*age + parentbelief*famreligiosity + parentbelief*control, data = d_all)
-summary(reg6)
+# DOES FAMILY RELIGIOSITY PREDICT INTERVENTION DOMAIN SCORES? 
+reg_domain1 <- lm(alldomains ~ famreligiosity, data = d_domains)
+reg_domain_nature1 <- lm(environment ~ famreligiosity, data = d_domains)
+reg_domain_social1 <- lm(social ~ famreligiosity, data = d_domains)
+reg_domain_psych1 <- lm(psych ~ famreligiosity, data = d_domains)
+reg_domain_achieve1 <- lm(achieve ~ famreligiosity, data = d_domains)
+reg_domain_health1 <- lm(health ~ famreligiosity, data = d_domains)
+
+summary(reg_domain1)
+summary(reg_domain_nature1) 
+summary(reg_domain_social1)
+summary(reg_domain_psych1) #sig
+summary(reg_domain_achieve1)
+summary(reg_domain_health1) #sig
+tab_model(reg_domain1, reg_domain_nature1, reg_domain_social1, reg_domain_achieve1, reg_domain_health1, reg_domain_psych1)
+
+# DOES PARENT BELIEF PREDICT INTERVENTION DOMAIN SCORES? 
+reg_domain2 <- lm(alldomains ~ parentbelief + famreligiosity, data = d_domains)
+reg_domain_nature2 <- lm(environment ~ parentbelief + famreligiosity, data = d_domains)
+reg_domain_social2 <- lm(social ~ parentbelief + famreligiosity, data = d_domains)
+reg_domain_psych2 <- lm(psych ~ parentbelief + famreligiosity, data = d_domains)
+reg_domain_achieve2 <- lm(achieve ~ parentbelief + famreligiosity, data = d_domains)
+reg_domain_health2 <- lm(health ~ parentbelief + famreligiosity, data = d_domains)
+reg_domain2.1 <- lm(alldomains ~ parentbelief + famreligiosity + age*parentbelief, data = d_domains)
+summary(reg_domain2.1)
+summary(reg_domain2)
+summary(reg_domain_nature2)
+summary(reg_domain_social2) #sig
+summary(reg_domain_psych2)
+summary(reg_domain_achieve2)
+summary(reg_domain_health2) #sig
+
+tab_model(reg_domain2, reg_domain_nature2, reg_domain_social2, reg_domain_psych2, reg_domain_achieve2, reg_domain_health2)
 
 ```
 
 ```{r looking at means diffs in domains}
-d_domain <- d_all %>% dplyr::select(starts_with("achieve"), starts_with("health"), starts_with("psych"), starts_with("social"), starts_with("environment"), starts_with("id_num"), "age", "people", "alldomains") 
 
 d_domain2 <- d_all %>% dplyr::select(starts_with("achieve"), starts_with("health"), starts_with("psych"), starts_with("social"), starts_with("environment"), starts_with("id_num")) 
 
 d_domain_long2 <- melt(d_domain2, id.vars= c("id_num"))
 
-d_domain_long2$variable <- factor(d_domain_long2$variable, levels = c("achieve", "social", "health", "psych", "environment"))
+d_domain_long2$variable <- factor(d_domain_long2$variable, levels = c("achieve", "social", "environment", "psych", "health"))
 
 domainclusters <- ggplot(data = d_domain_long2, mapping = aes(x = variable, y = value, color = variable)) + 
   geom_violin() + 
@@ -320,111 +516,167 @@ domainclusters <- ggplot(data = d_domain_long2, mapping = aes(x = variable, y = 
               map_signif_level=TRUE) +
   geom_signif(comparisons = list(c("social", "psych")), y_position =5,
               map_signif_level=TRUE) +
+  geom_signif(comparisons = list(c("social", "environment")), y_position =5.25,
+              map_signif_level=TRUE) +
   theme_minimal() +
   scale_color_brewer(palette= "Paired") +
   theme(legend.position = "none") +
   labs(title = "Intervention Cluster Mean Scores", x = "Domain", y = "Intervention scope") + 
-  scale_x_discrete(labels=c("achieve" = "Achievement", "health" = "Health", "social" = "Social", "psych" = "Psychology", "environment" = "Nature"))
+  scale_x_discrete(labels=c("achieve" = "Achievement", "social" = "Social", "environment" = "Nature", "psych" = "Psychological", "health" = "Health"))
 domainclusters
 ggsave("domainclusters.png", domainclusters, width = 6, height = 4, dpi = 300)
 
 # Compute the analysis of variance
-anova1 <- aov(value ~ variable, data = d_domain_long)
+anova1 <- aov(value ~ variable, data = d_domain_long2)
 # Summary of the analysis
 summary(anova1)
 TukeyHSD(anova1)
 
 ```
 
+# try running a gam with mgcv to see if there are any funky age effects
+
 ```{r age differences in intervention by person nature and all domains}
-
-# how should we visualize this data?
-g_environment <- ggplot(d_domain,aes(y=environment,x=age)) +
-  geom_point() +
-  geom_jitter() +
-  geom_smooth(method="lm", color = "#E69F00") +
-  theme_minimal()
-
-# plotting our data without reg lines
-g_environment
-
-g_people <- ggplot(d_domain,aes(y=people,x=age)) +
-  geom_point() +
-  geom_jitter() +
-  geom_smooth(method="lm", color = "#56B4E9") +
-  theme_minimal()
-
-# plotting our data without reg lines
-g_people
-
-g_total <- ggplot(d_domain,aes(y=alldomains,x=age)) +
-  geom_point() +
-  geom_jitter() +
-  geom_smooth(method="lm", color = "#009E73") +
-  theme_minimal()
-
-# plotting our data without reg lines
-g_total
-
-#plotting regression lines on the same figure
-
 #colors <- c("environment" = "#fdbf6f", "people" = "e2251d", "total" = "#fc9c9c")
+# I NEED TO GET RID OF THE IDKS IN MY DATASET BEFORE PLOTTING
 
-
-g_allinter <- ggplot(d_domain, aes(x = age, y = alldomains)) + 
-  geom_jitter(aes(age, environment, color = "Nature"), width = .2, height = .2, alpha=.3) +
+g_allinter <- ggplot(d_domains, aes(x = age, y = alldomains)) + 
+  #geom_jitter(aes(age, environment, color = "Nature"), width = .2, height = .2, alpha=.3) +
   geom_smooth(aes(age, environment, color = "Nature"), method = "glm", se = FALSE) +
-  geom_jitter(aes(age, social, color = "Social"), width = .2, height = .2, alpha=.3) +
+  #geom_jitter(aes(age, social, color = "Social"), width = .2, height = .2, alpha=.3) +
   geom_smooth(aes(age, social, color = "Social"), method = "glm", se = FALSE) +
-  geom_jitter(aes(age, psych, color = "Psych"), width = .2, height = .2, alpha=.3) +
+ # geom_jitter(aes(age, psych, color = "Psych"), width = .2, height = .2, alpha=.3) +
   geom_smooth(aes(age, psych, color = "Psych"), method = "glm", se = FALSE) +
-  geom_jitter(aes(age, achieve, color = "Achieve"), width = .2, height = .2, alpha=.3) +
+  #geom_jitter(aes(age, achieve, color = "Achieve"), width = .2, height = .2, alpha=.3) +
   geom_smooth(aes(age, achieve, color = "Achieve"), method = "glm", se = FALSE) +
-  geom_jitter(aes(age, health, color = "Health"), width = .2, height = .2, alpha=.3) +
+  #geom_jitter(aes(age, health, color = "Health"), width = .2, height = .2, alpha=.3) +
   geom_smooth(aes(age, health, color = "Health"), method = "glm", se = FALSE) +
   theme_minimal() +
   labs(title="Children's responses to intervention frequency questions by domain cluster", x = "Age", y = "Intervention score", color = "Domain") +
   theme(axis.text.x = element_text(angle=01)) +
   scale_color_manual(values = c("#a6cfe3", "#2177b4", "#b7dd95", "#34a02b", "#fc9c9c"), name = "Domain",
-                        limits = c("Achieve", "Social", "Health", "Psych", "Nature"))
+                        limits = c("Achieve", "Social", "Nature", "Psych", "Health"))
 
 
-g_allinter
+g_allinter <- g_allinter + ylim(1, 4)
 ggsave("devdomainclusters.png", g_allinter, width = 6, height = 4, dpi = 300)
-
 # geom_jitter(aes(age, alldomains, color = "Total"), width = .2, height = .2, alpha=.4) +
 # geom_smooth(aes(age, alldomains, color = "Total"), method = "glm", se = FALSE) +
-
-mod_environment <- lm(environment ~ age + parentbelief + famreligiosity + control, data = d_all)
-summary(mod_environment)
-mod_social <- lm(social ~ age + parentbelief + famreligiosity + control, data = d_all)
-summary(mod_social)
-mod_health <- lm(health ~ age + parentbelief + famreligiosity + control, data = d_all)
-summary(mod_health)
-mod_achieve <- lm(achieve ~ age + parentbelief + famreligiosity + control, data = d_all)
-summary(mod_achieve)
-mod_psych <- lm(psych ~ age + parentbelief + famreligiosity + control, data = d_all)
-summary(mod_psych) 
-mod_all <- lm(alldomains ~ age + famreligiosity + parentbelief + control, data = d_all)
-summary(mod_all)
-
-domainmanuscript <- tab_model(mod_environment, mod_achieve, mod_health, mod_social, mod_psych)
-
-domainmanuscript
-
-
 ```
 
-# How do I do this? multinomial logistic reg on child choice
+# Child choice question
+
+Alex said there's nothing really here, but that we could report descriptive statistics?
+
 ```{r multinomial logreg for child choice}
-library(nnet)
-d_explicitconcepts <- d_all %>% dplyr::select("control", contains(c("age", "gender", "famreligiosity", "parentbelief", "explicit_concepts", "school")))
+# we used nnet package to fit this type of reg
+d_explicitconcepts <- d_all %>% dplyr::select("control", contains(c("age", "gender", "famreligiosity", "parentbelief", "explicit_concepts", "school", "alldomains")))
+
 d_explicitconcepts <- na.omit(d_explicitconcepts)
 
 d_explicitconcepts$explicit_concepts <- recode_factor(d_explicitconcepts$explicit_concepts, "Jordan, who says God doesn't really make things happen in people's lives." = "Jordan", "Riley, who says God makes things happen in people's lives, but only at special times." = "Riley", "Riley, who says God makes things happen in people's lives, but only special times." = "Riley", "Sam, who says God makes things happen in people's lives, almost every day." = "Sam")
 
 d_explicitconcepts$explicit_concepts <- as.factor(d_explicitconcepts$explicit_concepts)
 
-model <- multinom(explicit_concepts ~ age + control + famreligiosity + parentbelief, data = d_explicitconcepts)
+#lapply(split(d_explicitconcepts$explicit_concepts, travel$travel ), FUN=summary )
+
+# loading the nnet package to run a multinomial model
+library(nnet)
+
+#note, r will automatically choose the lowest outcome category to be the referent group (jordan in this case)
+mod_explicit <- multinom(explicit_concepts ~ parentbelief, data=d_explicitconcepts)
+mod_explicitdomain <- multinom(explicit_concepts ~ alldomains, data=d_explicitconcepts)
+
+#let's look at the outputs to summarize the data. turns out, they aren't so helpful for us. so, let's make a function below
+mod_explicit
+summary(mod_explicit)
+
+summ.mod_explicit <- function( model ){
+               s <- summary( model )
+               for( i in 1:length(model$coef) ){
+                         cat( "Level ", model$lev[i+1], "vs. Level ", model$lev[1] )
+                         coef <- s$coefficients[i,]
+                         rrr <- exp( coef )
+                         se <- s$standard.errors[i,]
+                         zStat <- coef / se
+                         pVal <- 2*pnorm( abs(zStat), lower.tail=FALSE )
+                         ci95.lo <- exp( coef - qnorm(.975)*se )
+                         ci95.hi <- exp( coef + qnorm(.975)*se )
+                         rslt <- cbind( rrr, se, zStat, pVal, ci95.lo, ci95.hi )
+                         print( round( rslt, 3 ) )
+                 }
+}
+
+# I tried running the function, but there was a comma after model$lev[1], ) why did this need to be removed to run?
+
+#also, why did it only run 2 groups instead of 3?
+summ.mod_explicit(mod_explicit)
+#RRR = relative risk ratio
+
+#so, is my conclusion that parent belief did not predict who children picked?
+
+summ.mod_explicit(mod_explicitdomain)
+```
+
+
+```{r parent beliefs and age?}
+ggplot(d_all, aes(x = age, y = alldomains)) +
+  geom_smooth()
+
+ggplot(d_all, aes(x = age, y = interview)) +
+  geom_smooth()
+
+ggplot(d_all, aes(x = interview, y = parentbelief)) +
+  geom_smooth()
+
+```
+
+```{r looking at open-ended answers and age}
+
+ggplot(d_all, aes(x = jw_codes, color = age)) +
+  geom_bar()
+
+d_rpers <- d_all %>% dplyr::select(contains(c("age", "jw_codes", "id_num")))
+
+#d_openended$gender <- as.factor(d_openended$gender)
+
+#omitting NAs
+d_rpers <- na.omit(d_rpers)
+
+# let's convert our data to tall format so we can include all of the same plots on the same figure
+d_rpers_reshaped <- melt(d_rpers, id.vars= c("age", "id_num"))
+
+d_rpers_reshaped$age <- as.factor(d_rpers_reshaped$age)
+
+plot_rpers <- ggplot(data = d_rpers_reshaped, aes(x = value, fill = age)) +
+      geom_bar() + 
+      theme_classic() +
+      labs(title="Children's responses to God interventionist framing questions", x ="Item", y = "Counts", fill = "Age") +
+      theme(axis.text.x = element_text(angle=90))
+
+# fixing the x axis labels
+plot_rpers
+
+# LOOKING AT PARENT BELIEFS
+d_belief <- d_all %>% dplyr::select(contains(c("parentbelief", "jw_codes", "id_num")))
+
+#d_openended$gender <- as.factor(d_openended$gender)
+
+#omitting NAs
+d_belief <- na.omit(d_belief)
+
+# let's convert our data to tall format so we can include all of the same plots on the same figure
+d_belief_reshaped <- melt(d_belief, id.vars= c("parentbelief", "id_num"))
+
+d_belief_reshaped$parentbelief <- as.factor(d_belief_reshaped$parentbelief)
+
+plot_d_belief_reshaped <- ggplot(data = d_belief_reshaped, aes(x = value, fill = parentbelief)) +
+      geom_bar() + 
+      theme_classic() +
+      labs(title="Children's responses to God interventionist framing questions", x ="Item", y = "Counts", fill = "Parent belief") +
+      theme(axis.text.x = element_text(angle=90))
+
+# fixing the x axis labels
+plot_d_belief_reshaped
 
 ```
