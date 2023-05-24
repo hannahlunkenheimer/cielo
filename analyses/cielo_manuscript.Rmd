@@ -45,6 +45,9 @@ d_all <- subset(d_all, id_num != "129" & id_num != "152" & id_num != "175" & id_
 # control
 d_all$control <- dplyr::recode(d_all$control...6, 'Really Disagree' = 6, 'Disagree'=5, 'Kind of Disagree' = 4, 'Kind of Agree' = 3, 'Agree' = 2, 'Really Agree' = 1)
 
+d_all$controlcat <- dplyr::recode(d_all$control...6, 'Really Disagree' = 'No control', 'Disagree'= 'No control', 'Kind of Disagree' = 'No control', 'Kind of Agree' = 'Control', 'Agree' = 'Control', 'Really Agree' = 'Control')
+
+
 # religiosity
 d_all$relig_attendserv <- dplyr::recode(d_all$relig_attendserv, 'Never' = 1, 'Less than once a year'=2, 'A few times a year' = 3, 'A few times a month' = 4, 'A few times a week' = 5, 'Daily' = 6)
 d_all$relig_tradition <- dplyr::recode(d_all$relig_tradition, 'Not at all important' = 1, 'Minimally important'=2, 'Moderately important' = 3, 'Very important' = 4)
@@ -170,12 +173,23 @@ tab_corr(d_religcorr,
          p.numeric = TRUE,
          triangle = "lower")
 
+## correlation between religious tradition and religious service attendance 
+d_relig2corr <- d_all %>% dplyr::select(contains(c("relig_tradition", "relig_attendserv")))
+
+d_relig2corr <- na.omit(d_relig2corr)
+
+head(d_relig2corr)
+
+tab_corr(d_relig2corr,
+         p.numeric = TRUE,
+         triangle = "lower")
+
 ```
 
 ```{r framing}
 #open ended counts for intervention in various contexts
 
-d_framing <- d_all %>% dplyr::select(contains(c("age", "rgod_happen_earth", "rgod_happen_ever", "rgod_happen_lives", "rpers_happen", "id_num")))
+d_framing <- d_all %>% dplyr::select(contains(c("age", "rgod_happen_earth", "rgod_happen_ever", "rgod_happen_lives", "rpers_happen", "id_num", "controlcat")))
 
 #d_openended$gender <- as.factor(d_openended$gender)
 
@@ -338,7 +352,7 @@ Adding each item score before summing
 ## Intervention framing task
 ```{r intervention framing mixed effects model}
 #creating dataframe for intervention framing fem
-d_framingreg <- d_all %>% dplyr::select("control", contains(c("age", "rgod_happen_earth", "rgod_happen_ever", "rgod_happen_lives", "rpers_happen", "id_num", "gender", "famreligiosity", "parentbelief", "school", "interview", "faminfluence")))
+d_framingreg <- d_all %>% dplyr::select("control", contains(c("age", "rgod_happen_earth", "rgod_happen_ever", "rgod_happen_lives", "rpers_happen", "id_num", "gender", "famreligiosity", "parentbelief", "school", "interview", "faminfluence", "controlcat")))
 
 d_framingreg <- d_framingreg %>%
   filter_at(vars(starts_with("rpers"), starts_with("rgod")),
@@ -360,6 +374,8 @@ tab_model(reg_frame4, reg_frame4.1, reg_frame4.2, reg_frame4.3, reg_frame4.4)
 # DOES FAMILY RELIGIOSITY PREDICT INTERVENTION FRAMING SCORES? 
 reg_frame1 <- lm(interview ~ famreligiosity, data = d_framingreg)
 summary(reg_frame1)
+reg_frame7 <- lm(interview ~ age*famreligiosity, data = d_framingreg)
+summary(reg_frame7)
 reg_frame1.1 <- lm(rgod_happen_ever ~ famreligiosity, data = d_framingreg)
 summary(reg_frame1.1) 
 reg_frame1.2 <- lm(rgod_happen_earth ~ famreligiosity, data = d_framingreg)
@@ -368,9 +384,10 @@ reg_frame1.3 <- lm(rgod_happen_lives ~ famreligiosity, data = d_framingreg)
 summary(reg_frame1.3)
 reg_frame1.4 <- lm(rpers_happen ~ famreligiosity, data = d_framingreg)
 summary(reg_frame1.4)
-tab_model(reg_frame1, reg_frame1.1, reg_frame1.2, reg_frame1.3, reg_frame1.4, reg_frame1.5)
 # checking for interaction effects here
-reg_frame1.5 <- lm(rpers_happen ~ famreligiosity + famreligiosity*age, data = d_framingreg)
+reg_frame1.5 <- lm(rpers_happen ~ famreligiosity*age, data = d_framingreg)
+summary(reg_frame1.5)
+tab_model(reg_frame1, reg_frame1.1, reg_frame1.2, reg_frame1.3, reg_frame1.4, reg_frame1.5)
 
 # DOES PARENT BELIEF PREDICT INTERVENTION FRAMING SCORES? 
 reg_frame2 <- lm(interview ~ parentbelief + famreligiosity, data = d_framingreg)
@@ -382,10 +399,13 @@ summary(reg_frame2.2)
 reg_frame2.3 <- lm(rgod_happen_lives ~ parentbelief + famreligiosity, data = d_framingreg)
 summary(reg_frame2.3)
 reg_frame2.4 <- lm(rpers_happen ~ parentbelief + famreligiosity, data = d_framingreg)
+summary(reg_frame2.4)
 reg_frame2.5 <- lm(rpers_happen ~ parentbelief + famreligiosity + parentbelief*age, data = d_framingreg)
 summary(reg_frame2.5)
 
-summary(reg_frame2.4)
+reg_frame2.6 <- lm(interview ~ parentbelief*age + famreligiosity, data = d_framingreg)
+summary(reg_frame2.6)
+
 tab_model(reg_frame2, reg_frame2.1, reg_frame2.2, reg_frame2.3, reg_frame2.4)
 
 # DOES FAMILY INFLUENCE LUMPED TOGETHER PREDICT INTERVENTION FRAMING?
@@ -397,6 +417,8 @@ reg_frame22 <- lm(rgod_happen_earth ~ faminfluence, data = d_framingreg)
 reg_frame23 <- lm(rgod_happen_lives ~ faminfluence, data = d_framingreg)
 reg_frame24 <- lm(rpers_happen ~ faminfluence, data = d_framingreg)
 tab_model(reg_frame20, reg_frame21, reg_frame22, reg_frame23, reg_frame24)
+
+
 
 
 # DOES PERCEIVED CONTROL PREDICT INTERVENTION FRAMING SCORES? 
@@ -411,14 +433,18 @@ summary(reg_frame3.3)
 reg_frame3.4 <- lm(rpers_happen ~ control + age, data = d_framingreg)
 summary(reg_frame3.4)
 tab_model(reg_frame3, reg_frame3.1, reg_frame3.2, reg_frame3.3, reg_frame3.4)
-reg_frame3.5 <- lm(interview ~ control + age + control*age, data = d_framingreg)
+reg_frame3.5 <- lm(interview ~ control*age, data = d_framingreg)
 summary(reg_frame3.5)
+reg_frame3.6 <- lm(interview ~ control*famreligiosity, data = d_framingreg)
+summary(reg_frame3.6)
+reg_frame3.7 <- lm(interview ~ control*parentbelief, data = d_framingreg)
+summary(reg_frame3.7)
 ```
 
 
 ```{r summed scores for all vignette domains, echo=FALSE}
 #creating dataframe for intervention framing fem
-d_domains <- d_all %>% dplyr::select("control", contains(c("age", "environment", "social", "psych", "achieve", "id_num", "gender", "famreligiosity", "parentbelief", "health", "alldomains")))
+d_domains <- d_all %>% dplyr::select("control", contains(c("age", "environment", "social", "psych", "achieve", "id_num", "gender", "famreligiosity", "parentbelief", "health", "alldomains", "faminfluence", "controlcat")))
 
 reg_control <- lm(control ~ age, data = d_domains)
 summary(reg_control)
@@ -445,8 +471,17 @@ reg_domain_social3 <- lm(social ~ control + age, data = d_domains)
 reg_domain_achieve3 <- lm(achieve ~ control + age, data = d_domains)
 reg_domain_health3 <- lm(health ~ control + age, data = d_domains)
 reg_domain_psych3 <- lm(psych ~ control + age, data = d_domains)
-reg_domain_3.1 <- lm(environment ~ control + age + age*control, data = d_domains)
+
+reg_domain_3.1 <- lm(alldomains ~ age*control, data = d_domains)
+reg_domain_3.2 <- lm(alldomains ~ famreligiosity + parentbelief*control, data = d_domains)
+reg_domain_3.3 <- lm(alldomains ~ famreligiosity*control, data = d_domains)
+reg_domain_3.4 <- lm(alldomains ~ faminfluence*control, data = d_domains)
+
 summary(reg_domain_3.1)
+summary(reg_domain_3.2)
+summary(reg_domain_3.3)
+summary(reg_domain_3.4)
+
 summary(reg_domain3)
 # control doesn't predict any of the domains separately, either
 summary(reg_domain_nature3)
@@ -464,8 +499,10 @@ reg_domain_social1 <- lm(social ~ famreligiosity, data = d_domains)
 reg_domain_psych1 <- lm(psych ~ famreligiosity, data = d_domains)
 reg_domain_achieve1 <- lm(achieve ~ famreligiosity, data = d_domains)
 reg_domain_health1 <- lm(health ~ famreligiosity, data = d_domains)
+reg_domain1.1 <- lm(alldomains ~ famreligiosity*age, data = d_domains)
 
 summary(reg_domain1)
+summary(reg_domain1.1)
 summary(reg_domain_nature1) 
 summary(reg_domain_social1)
 summary(reg_domain_psych1) #sig
@@ -480,7 +517,7 @@ reg_domain_social2 <- lm(social ~ parentbelief + famreligiosity, data = d_domain
 reg_domain_psych2 <- lm(psych ~ parentbelief + famreligiosity, data = d_domains)
 reg_domain_achieve2 <- lm(achieve ~ parentbelief + famreligiosity, data = d_domains)
 reg_domain_health2 <- lm(health ~ parentbelief + famreligiosity, data = d_domains)
-reg_domain2.1 <- lm(alldomains ~ parentbelief + famreligiosity + age*parentbelief, data = d_domains)
+reg_domain2.1 <- lm(alldomains ~ famreligiosity + age*parentbelief, data = d_domains)
 summary(reg_domain2.1)
 summary(reg_domain2)
 summary(reg_domain_nature2)
@@ -678,5 +715,63 @@ plot_d_belief_reshaped <- ggplot(data = d_belief_reshaped, aes(x = value, fill =
 
 # fixing the x axis labels
 plot_d_belief_reshaped
+
+```
+
+
+```{r just messing around}
+messing1 <- ggplot(d_domains, aes(x = famreligiosity, y = alldomains, color = controlcat)) + 
+  geom_jitter() +
+  geom_smooth(aes(famreligiosity, alldomains, group = controlcat), method = "glm", se = FALSE)
+
+messing1
+```
+
+```{r just messing around}
+messing2 <- ggplot(d_domains, aes(x = faminfluence, y = alldomains, color = controlcat)) + 
+  geom_jitter() +
+  geom_smooth(aes(faminfluence, alldomains, group = controlcat), method = "glm", se = FALSE)
+
+messing2
+
+messing5 <- ggplot(d_domains, aes(x = age, y = alldomains, color = controlcat)) + 
+  geom_jitter() +
+  geom_smooth(aes(age, alldomains, group = controlcat), method = "glm", se = FALSE) +
+  xlim(0, 12) +
+  theme_minimal()
+
+messing5
+```
+
+```{r just messing around}
+messing3 <- ggplot(d_framingreg, aes(x = faminfluence, y = interview, color = controlcat)) + 
+  geom_jitter() +
+  geom_smooth(aes(faminfluence, interview, group = controlcat), method = "glm", se = FALSE) +
+  xlim(0, 5.5) +
+  theme_minimal()
+
+messing3
+
+messing4 <- ggplot(d_framingreg, aes(x = age, y = interview, color = controlcat)) + 
+  geom_jitter() +
+  geom_smooth(aes(age, interview, group = controlcat), method = "glm", se = FALSE) +
+  xlim(0, 12) +
+  theme_minimal()
+
+messing4
+```
+
+```{r messing with control}
+control_mod1 <- lm(interview ~ faminfluence*controlcat, data = d_framingreg)
+summary(control_mod1)
+control_mod2 <- lm(interview ~ age*controlcat, data = d_framingreg)
+summary(control_mod2)
+
+#from what we see here, if we collapse everything into a family influence variable, we see a significant interaction of 
+
+control_mod1 <- lm(alldomains ~ faminfluence*controlcat, data = d_domains)
+summary(control_mod1)
+control_mod2 <- lm(alldomains ~ age*controlcat, data = d_domains)
+summary(control_mod2)
 
 ```
