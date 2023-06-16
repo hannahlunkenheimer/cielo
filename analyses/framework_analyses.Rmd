@@ -1,5 +1,5 @@
 ---
-title: "framework_analyses"
+title: "intervention questionnaire analyses"
 author: "Hannah Lunkenheimer"
 date: "`r Sys.Date()`"
 output: html_document
@@ -7,108 +7,461 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(readr)
+library(tidyverse)
+library(sjPlot)
+# to plot figs next to eachother
+library(gridExtra)
+
 ```
 
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+All subsequent framework analyses for the intervention framework task exclude participants who said "I don't know" or did not respond to the questions in the task.
 
 ```{r}
 # reading in clean data
-d_all <- read_csv("../cielo/data/data_clean/cielo_data.csv")
+d_all <- read_csv("../data/data_clean/cielo_data.csv")
+```
+```{r anova focal questions}
+# looking at differences between focal questions
+d_quest_anova <- d_all %>% dplyr::select("frame_can_make_happen_num", "frame_peoples_lives_num", "frame_own_life_num", "frame_on_earth_num")
+
+d_quest_anova <- d_quest_anova %>%
+  filter_all(any_vars(. != 0))
+
+# Convert the data to a long format
+d_quest_anova_long <- d_quest_anova %>%
+  pivot_longer(cols = everything())
+
+aov_frame <- aov(value ~ name, data = d_quest_anova_long)
+summary(aov_frame)
+TukeyHSD(aov_frame)
+```
+
+```{r}
+## selecting all of the columns that we need for our framework analysis
+d_intervention <- d_all %>% dplyr::select("age", "gender", "fam_influence", "fam_religiosity", "parent_beliefs", "framework_score", contains(c("pid", "frame_", "control")))
+#
+## renaming the framework score column to intervention_score
+d_intervention <- d_intervention %>%
+  rename(intervention_score = framework_score)
+```
+
+```{r}
+# let's look at whether god can intervene 
+quest_null_mod <- lm(intervention_score ~ 1, data = d_intervention)
+summary(quest_null_mod)
+
+quest_age_mod <- lm(intervention_score ~ age, data = d_intervention)
+summary(quest_age_mod)
+
+quest_famreg_mod <- lm(intervention_score ~ fam_religiosity, data = d_intervention)
+summary(quest_famreg_mod)
+tab_model(quest_famreg_mod)
+
+quest_pb_mod <- lm(intervention_score ~ parent_beliefs + fam_religiosity, data = d_intervention)
+summary(quest_pb_mod)
+
+quest_control_mod <- lm(intervention_score ~ age + control_cat, data = d_intervention)
+summary(quest_control_mod)
+tab_model(quest_control_mod)
 
 ```
 
 ```{r}
-# selecting all of the columns that we need for our framework analysis
-d_framework <- d_all %>% dplyr::select("age", "gender", "fam_influence", "fam_religiosity", "parent_beliefs", "framework_score", contains(c("pid", "frame_", "control")))
+# interaction models
+quest_famrelig_int_mod <- lm(intervention_score ~ age*fam_religiosity, data = d_intervention)
+summary(quest_famrelig_int_mod)
+tab_model(quest_famrelig_int_mod)
 
-#omitting NAs
-#d_framework <- na.omit(d_framework)
-
-# dare there developmental differences in intervention framework scores? no
-frame_age_model <- lm(framework_score ~ age, data = d_framework)
-summary(frame_age_model)
-
-# are there gender differences in intervention framework scores? no
-frame_gender_model <- lm(framework_score ~ gender, data = d_framework)
-summary(frame_gender_model)
-
-# does family religiosity  impact intervention framework scores? yes!
-frame_fam_religiosity_model <- lm(framework_score ~ fam_religiosity, data = d_framework)
-summary(frame_fam_religiosity_model)
-
-# does parent belief  impact intervention framework scores? no
-frame_parent_beliefs_model <- lm(framework_score ~ parent_beliefs + fam_religiosity, data = d_framework)
-summary(frame_parent_beliefs_model)
-
-# does family influence impact intervention framework scores? yes!
-frame_fam_influence_model <- lm(framework_score ~ fam_influence, data = d_framework)
-summary(frame_fam_influence_model)
-
-# are there interaction effects between age and religiosity to predict intervention framework scores? no
-frame_age_relig_model <- lm(framework_score ~ age*fam_religiosity, data = d_framework)
-summary(frame_age_relig_model)
-
-# does perceived control predict intervention framework scores? no
-frame_control_model <- lm(framework_score ~ control, data = d_framework)
-summary(frame_control_model)
-
-# does perceived control (2 cats) predict intervention framework scores? no
-frame_control_cat_model <- lm(framework_score ~ control_cat, data = d_framework)
-summary(frame_control_cat_model)
-
-# does perceived control*fam relig predict intervention framework scores? no
-frame_control_fam_model <- lm(framework_score ~ control_cat*fam_influence, data = d_framework)
-summary(frame_control_fam_model)
+quest_pb_int_mod <- glm(intervention_score ~ age*parent_beliefs + fam_religiosity, data = d_intervention)
+summary(quest_pb_int_mod)
+tab_model(quest_pb_int_mod)
 
 ```
+
+# Can God
 ```{r}
-# now let's look at personal intervention
-# are there developmental differences in own life intervention framework scores? no
-frame_own_age_model <- lm(frame_own_life_num ~ age, data = d_framework)
-summary(frame_own_age_model)
+# let's look at whether god can intervene 
 
-# are there gender differences in own life intervention framework scores? no
-frame_own_gender_model <- lm(frame_own_life_num ~ gender, data = d_framework)
-summary(frame_own_gender_model)
+#omitting idk's from the dataset
+d_can <- d_intervention %>%
+  filter(frame_can_make_happen_num != 0) %>%
+  mutate(frame_can_make_happen_bin = recode(frame_can_make_happen, "yes" = 1, "no" = 0))
 
-# does family religiosity  impact intervention framework scores? yes!
-frame_own_fam_religiosity_model <- lm(frame_own_life_num ~ fam_religiosity, data = d_framework)
-summary(frame_own_fam_religiosity_model)
+can_null_mod <- glm(frame_can_make_happen_bin ~ 1, data = d_can, family = binomial)
+summary(can_null_mod)
 
-# does parent belief  impact intervention framework scores? yes!
-frame_own_parent_beliefs_model <- lm(frame_own_life_num ~ parent_beliefs + fam_religiosity, data = d_framework)
-summary(frame_own_parent_beliefs_model)
+can_age_mod <- glm(frame_can_make_happen_bin ~ age, data = d_can, family = binomial)
+summary(can_age_mod)
 
-# does family influence impact intervention framework scores? yes!
-frame_own_fam_influence_model <- lm(frame_own_life_num ~ fam_influence, data = d_framework)
-summary(frame_own_fam_influence_model)
+can_famreg_mod <- glm(frame_can_make_happen_bin ~ fam_religiosity, data = d_can)
+summary(can_famreg_mod)
 
-# are there interaction effects between age and religiosity to predict intervention framework scores? no
-frame_own_age_relig_model <- lm(frame_own_life_num ~ age*fam_religiosity, data = d_framework)
-summary(frame_own_age_relig_model)
+can_pb_mod <- glm(frame_can_make_happen_bin ~ parent_beliefs + fam_religiosity, data = d_can, family = binomial)
+summary(can_pb_mod)
 
-# does perceived control predict intervention framework scores? no
-frame_own_control_model <- lm(frame_own_life_num ~ control, data = d_framework)
-summary(frame_own_control_model)
+# control predicts can god
+can_control_mod <- glm(frame_can_make_happen_bin ~ age + control_cat, data = d_can, family = binomial)
+summary(can_control_mod)
+tab_model(can_control_mod)
 
-# does perceived control (2 cats) predict intervention framework scores? no
-frame_own_control_cat_model <- lm(frame_own_life_num ~ control_cat, data = d_framework)
-summary(frame_own_control_cat_model)
+```
 
-# does perceived control*fam relig predict intervention framework scores? no
-frame_own_control_fam_model <- lm(frame_own_life_num ~ control_cat*fam_influence, data = d_framework)
-summary(frame_own_control_fam_model)
+```{r}
+# interaction models
+can_famrelig_int_mod <- glm(frame_can_make_happen_bin ~ age*fam_religiosity, family = binomial, data = d_can)
+summary(can_famrelig_int_mod)
+tab_model(can_famrelig_int_mod)
 
-# does perceived control*fage predict intervention framework scores? no
-frame_own_control_age_model <- lm(frame_own_life_num ~ control_cat*age, data = d_framework)
-summary(frame_own_control_age_model)
+can_pb_int_mod <- glm(frame_can_make_happen_bin ~ age*parent_beliefs + fam_religiosity, family = binomial, data = d_can)
+summary(can_pb_int_mod)
+tab_model(can_pb_int_mod)
 
-# does perceived control*parentbelief predict intervention framework scores? no
-frame_own_control_pb_model <- lm(frame_own_life_num ~ control_cat*parent_beliefs, data = d_framework)
-summary(frame_own_control_pb_model)
+```
+
+```{r}
+# let's graph 
+can_famrelig_plot <- ggplot(d_can, 
+                   aes(x = age, 
+                       y = frame_can_make_happen_num, 
+                       color = as.factor(fam_religiosity))) + 
+  geom_jitter(aes(age, frame_can_make_happen_num), 
+              width = .1, height = .1, alpha=.3) +
+  geom_smooth(aes(age, frame_can_make_happen_num), 
+              method = "glm", se = FALSE) +
+  scale_color_discrete() +
+  labs(x = "Age", y = "Can God intervene on Earth, yes or no?", color = "Family Religiosity",
+       title = "Interaction between Age\n and Family Religiosity") +
+  theme_minimal() +
+  theme(text = element_text(family = "Times New Roman"), legend.position = "bottom")
+
+
+can_pb_plot <- ggplot(d_can, 
+                   aes(x = age, 
+                       y = frame_can_make_happen_num, 
+                       color = as.factor(parent_beliefs))) + 
+  geom_jitter(aes(age, frame_can_make_happen_num), 
+              width = .1, height = .1, alpha=.3) +
+  geom_smooth(aes(age, frame_can_make_happen_num), 
+              method = "glm", se = FALSE) +
+  scale_color_discrete() +
+  labs(x = "Age", y = "Can God intervene on Earth, yes or no?", color = "Parent Intervention Beliefs",
+       title = "Interaction between Age\n and Parent Intervention Beliefs") +
+  theme_minimal() +
+  theme(text = element_text(family = "Times New Roman"), legend.position = "bottom")
+
+#grid.arrange(g_allinter, can_pb_plot, ncol = 1)
+
+# Create the plot with modified x-axis labels
+can_control_fig <- ggplot(d_can_summary, aes(x = frame_can_make_happen_num, y = count, fill = control_cat)) + 
+  geom_bar(stat = "identity", position = "dodge") +
+  scale_fill_manual(values = wes_palette("Royal2", n = 5)) +
+  geom_signif(comparisons = list(c("control", "no control")), map_signif_level = TRUE, textsize = 4,
+              vjust = -0.5, tip_length = 0.02) +
+  labs(x = "Can God intervene on Earth, yes or no?", y = "Counts", color = "Control",
+       title = "Control") +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+can_control_fig
+```
+
+```{r}
+# Calculate the count variable
+d_can_summary <- d_all %>%
+  group_by(frame_can_make_happen_num, control_cat) %>%
+  summarise(count = n())
+
+# Convert frame_can_make_happen_num to factor with custom labels
+d_can_summary$frame_can_make_happen_num <- factor(d_can_summary$frame_can_make_happen_num,
+                                                  levels = c(0, 1, 2),
+                                                  labels = c("idk", "no", "yes"))
+
+d_can_summary = na.omit(d_can_summary)
+# Calculate proportions
+d_can_proportions <- d_can_summary %>%
+  group_by(frame_can_make_happen_num) %>%
+  mutate(total_count = sum(count)) %>%
+  ungroup() %>%
+  mutate(proportion = count / total_count)
+
+# Compute significance levels
+signif_df <- d_can_proportions %>%
+  filter(control_cat %in% c("control", "no control")) %>%
+  group_by(frame_can_make_happen_num) %>%
+  summarise(p_value = prop.test(count, total_count)$p.value) %>%
+  mutate(significance = ifelse(p_value < 0.05, "*", "ns"))
+
+# Create the plot
+can_control_fig <- ggplot(d_can_proportions, aes(x = as.factor(frame_can_make_happen_num), y = proportion, fill = control_cat)) + 
+  geom_bar(stat = "identity", position = "dodge") +
+  scale_fill_manual(values = wes_palette("Royal2", n = 5), name = "Control") + 
+  labs(x = "Can God intervene on Earth, yes or no?", y = "Proportions", color = "Control",
+       title = "Control") +
+  geom_signif(comparisons = list(c("control", "no control")), y_position = 4.00,
+              map_signif_level=TRUE) +  theme_minimal()
+
+can_control_fig
+
+ggsave("can_control_fig.png", can_control_fig, width = 4, height = 4, dpi = 300)
+
+```
+Control predicts possibility of can God...
+
+For our can God question, we have control as a significant predictor, and significant interactions of parent beliefs and age, and family religiosity and age. 
+
+# On Earth
+```{r}
+# now let's look at God's intervention on Earth
+
+#omitting idk's from the dataset
+d_earth <- d_intervention %>%
+  filter(frame_on_earth_num != 0) %>%
+  mutate(frame_on_earth_bin = recode(frame_on_earth, "yes" = 1, "no" = 0))
+
+# null model
+earth_null_mod <- glm(frame_on_earth_bin ~ 1, family = binomial, data = d_earth)
+summary(earth_null_mod)
+
+earth_age_mod <- glm(frame_on_earth_bin ~ age, family = binomial, data = d_earth)
+summary(earth_age_mod)
+
+earth_famrelig_mod <- glm(frame_on_earth_bin ~ fam_religiosity, family = binomial, data = d_earth)
+summary(earth_famrelig_mod)
+
+earth_pb_mod <- glm(frame_on_earth_bin ~ parent_beliefs + fam_religiosity, family = binomial, data = d_earth)
+summary(earth_pb_mod)
+
+earth_control_mod <- glm(frame_on_earth_bin ~ age + control_cat, family = binomial, data = d_earth)
+summary(earth_control_mod)
+
+tab_model(earth_age_mod, earth_famrelig_mod, earth_pb_mod, earth_control_mod,
+  show.est = TRUE,
+  show.ci = 0.95,
+  show.se = TRUE,
+  std.response = TRUE,
+  show.p = TRUE)
+
+```
+
+```{r}
+# interaction models
+earth_famrelig_int_mod <- glm(frame_on_earth_bin ~ age*fam_religiosity, data = d_earth, family = binomial)
+summary(earth_famrelig_int_mod)
+coef(earth_famrelig_int_mod)
+confint(earth_famrelig_int_mod, level = 0.95)
+summary(earth_famrelig_int_mod)$coefficients[, "Std. Error"]
+tab_model(earth_famrelig_int_mod)
+
+earth_pb_int_mod <- glm(frame_on_earth_bin ~ age*parent_beliefs + fam_religiosity, data = d_earth)
+summary(earth_pb_int_mod)
+AIC(earth_pb_int_mod)
+
+```
+
+```{r}
+# let's graph 
+
+earth_famrelig_plot <- ggplot(d_earth, 
+                   aes(x = age, 
+                       y = frame_on_earth_num, 
+                       color = as.factor(fam_religiosity))) + 
+  geom_jitter(aes(age, frame_on_earth_num), 
+              width = .1, height = .1, alpha=.3) +
+  geom_smooth(aes(age, frame_on_earth_num), 
+              method = "glm", se = FALSE) +
+  scale_color_discrete() +
+  labs(x = "Age", y = "Does God intervene on Earth, yes or no?", color = "Family\n Religiosity",
+       title = "Interaction between Age\n and Family Religiosity") +
+  theme_minimal() +
+  theme(text = element_text(family = "Times New Roman"), legend.position = "bottom")
+
+
+earth_pb_plot <- ggplot(d_earth, 
+                   aes(x = age, 
+                       y = frame_on_earth_num, 
+                       color = as.factor(parent_beliefs))) + 
+  geom_jitter(aes(age, frame_on_earth_num), 
+              width = .1, height = .1, alpha=.3) +
+  geom_smooth(aes(age, frame_on_earth_num), 
+              method = "glm", se = FALSE) +
+  scale_color_discrete() +
+  labs(x = "Age", y = "Does God intervene on Earth, yes or no?", color = "Parent\n Intervention\n Beliefs",
+       title = "Interaction between Age\n and Parent Intervention Beliefs") +
+  theme_minimal() +
+  theme(text = element_text(family = "Times New Roman"), legend.position = "bottom")
+
+grid.arrange(earth_famrelig_plot, earth_pb_plot, ncol = 2)
+
+```
+There is an interaction effect between age and religiosity that predicts intervention on Earth.
+
+# People's lives
+```{r}
+# now let's look at personal intervention 
+
+#omitting idk's from the dataset
+d_people <- d_intervention %>%
+  filter(frame_peoples_lives_num != 0) %>%
+  mutate(frame_peoples_lives_bin = recode(frame_peoples_lives, "yes" = 1, "no" = 0))
+
+# null model
+people_null_mod <- glm(frame_peoples_lives_bin ~ 1, data = d_people, family = binomial)
+summary(people_null_mod)
+
+people_age_mod <- glm(frame_peoples_lives_bin ~ age, data = d_people, family = binomial)
+summary(people_age_mod)
+
+people_famrelig_mod <- glm(frame_peoples_lives_bin ~ fam_religiosity, data = d_people, family = binomial)
+summary(people_famrelig_mod)
+
+people_pb_mod <- glm(frame_peoples_lives_bin ~ parent_beliefs + fam_religiosity, data = d_people, family = binomial)
+summary(people_pb_mod)
+tab_model(people_pb_mod)
+
+people_control_mod <- glm(frame_peoples_lives_bin ~ age + control_cat, data = d_people, family = binomial)
+summary(people_control_mod)
+
+```
+
+```{r}
+# interaction models
+people_famrelig_int_mod <- lm(frame_peoples_lives_num ~ age*fam_religiosity, data = d_people)
+summary(people_famrelig_int_mod)
+AIC(people_famrelig_int_mod)
+
+people_pb_int_mod <- lm(frame_peoples_lives_num ~ age*parent_beliefs + fam_religiosity, data = d_people)
+summary(people_pb_int_mod)
+AIC(people_pb_int_mod)
+
+tab_model(people_famrelig_int_mod, people_pb_int_mod,
+  show.est = TRUE,
+  show.ci = 0.95,
+  show.se = TRUE,
+  std.response = TRUE,
+  show.p = TRUE)
+```
+
+```{r}
+# let's graph 
+people_famrelig_plot <- ggplot(d_people, 
+                   aes(x = age, 
+                       y = frame_peoples_lives_num, 
+                       color = as.factor(fam_religiosity))) + 
+  geom_jitter(aes(age, frame_peoples_lives_num), 
+              width = .1, height = .1, alpha=.3) +
+  geom_smooth(aes(age, frame_peoples_lives_num), 
+              method = "glm", se = FALSE) +
+  scale_color_discrete() +
+  labs(x = "Age", y = "Does God intervene in people's lives, yes or no?", color = "Family\n Religiosity",
+       title = "Interaction between Age\n and Family Religiosity") +
+  theme_minimal() +
+  theme(text = element_text(family = "Times New Roman"), legend.position = "bottom")
+
+
+people_pb_plot <- ggplot(d_people, 
+                   aes(x = age, 
+                       y = frame_peoples_lives_num, 
+                       color = as.factor(parent_beliefs))) + 
+  geom_jitter(aes(age, frame_peoples_lives_num), 
+              width = .1, height = .1, alpha=.3) +
+  geom_smooth(aes(age, frame_peoples_lives_num), 
+              method = "glm", se = FALSE) +
+  scale_color_discrete() +
+  labs(x = "Age", y = "Does God intervene in people's lives, yes or no?", 
+       color = "Parent\n Intervention\n Beliefs",
+       title = "Interaction between Age\n and Parent Intervention Beliefs") +
+  theme_minimal() +
+  theme(text = element_text(family = "Times New Roman"), legend.position = "bottom")
+
+grid.arrange(people_famrelig_plot, people_pb_plot, ncol = 2)
+
+```
+
+# Own life
+```{r}
+# now let's look at personal intervention 
+
+#omitting idk's from the dataset
+d_personal <- d_intervention %>%
+  filter(frame_own_life_num != 0) %>%
+  mutate(frame_own_life_bin = recode(frame_own_life, "yes" = 1, "no" = 0))
+
+# null model
+personal_null_mod <- lm(frame_own_life_bin ~ 1, data = d_personal)
+summary(personal_null_mod)
+
+personal_age_mod <- glm(frame_own_life_bin ~ age, data = d_personal, family = binomial)
+summary(personal_age_mod)
+tab_model(personal_age_mod)
+
+personal_famrelig_mod <- lm(frame_own_life_bin ~ fam_religiosity, data = d_personal)
+summary(personal_famrelig_mod)
+
+personal_pb_mod <- lm(frame_own_life_bin ~ parent_beliefs + fam_religiosity, data = d_personal)
+summary(personal_pb_mod)
+
+personal_control_mod <- lm(frame_own_life_bin ~ age + control_cat, data = d_personal)
+summary(personal_control_mod)
+
+#tab_model(personal_age_mod, personal_famrelig_mod, personal_pb_mod, personal_control_mod,
+#  show.est = TRUE,
+#  show.ci = 0.95,
+#  show.se = TRUE,
+#  std.response = TRUE,
+#  show.p = TRUE)
+```
+
+```{r}
+# interaction models
+personal_famrelig_int_mod <- lm(frame_own_life_num ~ age*fam_religiosity, data = d_personal)
+summary(personal_famrelig_int_mod)
+AIC(personal_famrelig_int_mod)
+
+personal_pb_int_mod <- lm(frame_own_life_num ~ age*parent_beliefs + fam_religiosity, data = d_personal)
+summary(personal_pb_int_mod)
+AIC(personal_pb_int_mod)
+
+tab_model(personal_famrelig_int_mod, personal_pb_int_mod, 
+  show.est = TRUE,
+  show.ci = 0.95,
+  show.se = TRUE,
+  std.response = TRUE,
+  show.p = TRUE)
+```
+
+```{r}
+# let's graph 
+personal_famrelig_plot <- ggplot(d_personal, 
+                   aes(x = age, 
+                       y = frame_own_life_num, 
+                       color = as.factor(fam_religiosity))) + 
+  geom_jitter(aes(age, frame_own_life_num), 
+              width = .1, height = .1, alpha=.3) +
+  geom_smooth(aes(age, frame_own_life_num), 
+              method = "glm", se = FALSE) +
+  scale_color_discrete() +
+  labs(x = "Age", y = "Has God intervened in your own life, yes or no?", color = "Family\n Religiosity",
+       title = "Interaction between Age\n and Family Religiosity") +
+  theme_minimal() +
+  theme(text = element_text(family = "Times New Roman"), legend.position = "bottom")
+
+
+personal_pb_plot <- ggplot(d_personal, 
+                   aes(x = age, 
+                       y = frame_own_life_num, 
+                       color = as.factor(parent_beliefs))) + 
+  geom_jitter(aes(age, frame_own_life_num), 
+              width = .1, height = .1, alpha=.3) +
+  geom_smooth(aes(age, frame_own_life_num), 
+              method = "glm", se = FALSE) +
+  scale_color_discrete() +
+  labs(x = "Age", y = "Has God intervened in your own life, yes or no?", 
+       color = "Parent\n Intervention\n Beliefs",
+       title = "Interaction between Age\n and Parent Intervention Beliefs") +
+  theme_minimal() +
+  theme(text = element_text(family = "Times New Roman"), legend.position = "bottom")
+
+grid.arrange(personal_famrelig_plot, personal_pb_plot, ncol = 2)
 
 ```

@@ -1,0 +1,326 @@
+---
+title: "domain_analyses"
+author: "Hannah Lunkenheimer"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(readr)
+library(tidyverse)
+library(ggsignif)
+
+```
+
+```{r cars}
+# reading in clean data
+d_all <- read_csv("../data/data_clean/cielo_data.csv")
+```
+```{r, echo=FALSE}
+# selecting all of the columns that we need for our framework analysis
+library(wesanderson)
+library(extrafont)
+
+d_domain <- d_all %>% dplyr::select("age", "gender", "fam_influence", "fam_religiosity", "parent_beliefs", contains(c("pid", "domain", "control")))
+
+d_domain2 <- d_all %>% dplyr::select("domain_nature", "domain_social", "domain_achieve",
+                                     "domain_health", "domain_psych", "pid") 
+
+d_domain_long2 <- d_domain2 %>%
+  pivot_longer(cols = -pid, names_to = "variable", values_to = "value")
+
+d_domain_long2$variable <- factor(d_domain_long2$variable, levels = c("domain_achieve", "domain_social", "domain_nature", "domain_psych", "domain_health"))
+
+domainclusters <- ggplot(data = d_domain_long2, mapping = aes(x = variable, y = value, color = variable)) + 
+  geom_violin() + 
+  stat_summary(fun.y = mean, geom = "errorbar", aes(ymax = ..y.., ymin = ..y..),
+                 width = .7 , size = 1, linetype = "solid") +
+  geom_jitter(width = .2, height = .2, alpha=.3) +
+  geom_signif(comparisons = list(c("domain_achieve", "domain_health")), y_position = 4.00,
+              map_signif_level=TRUE) +
+  geom_signif(comparisons = list(c("domain_achieve", "domain_psych")), y_position = 4.25,
+              map_signif_level=TRUE) +
+  geom_signif(comparisons = list(c("domain_achieve", "domain_nature")), y_position = 4.5,
+              map_signif_level=TRUE) +
+  geom_signif(comparisons = list(c("domain_social", "domain_health")), y_position = 4.75,
+              map_signif_level=TRUE) +
+  geom_signif(comparisons = list(c("domain_social", "domain_psych")), y_position =5,
+              map_signif_level=TRUE) +
+  geom_signif(comparisons = list(c("domain_social", "domain_nature")), y_position =5.25,
+              map_signif_level=TRUE) +
+  theme_minimal() +
+  scale_color_manual(values = wes_palette("Royal2", n = 5)) +
+  theme(legend.position = "none") +
+  labs(title = "Intervention Domain Mean Scores", x = "Domain", y = "Intervention scores") + 
+  scale_x_discrete(labels=c("domain_achieve" = "Achievement", "domain_social" = "Social", "domain_nature" = "Nature", "domain_psych" = "Psychological", "domain_health" = "Health")) 
+
+domainclusters
+ggsave("../figs/domainclusters.png", domainclusters, width = 6, height = 6, dpi = 300)
+
+# Compute the analysis of variance
+anova1 <- aov(value ~ variable, data = d_domain_long2)
+# Summary of the analysis
+summary(anova1)
+TukeyHSD(anova1)
+```
+
+```{r}
+g_allinter <- ggplot(d_domain, aes(x = age, y = alldomains)) + 
+  #geom_jitter(aes(age, environment, color = "Nature"), width = .2, height = .2, alpha=.3) +
+  geom_smooth(aes(age, domain_nature, color = "Nature"), method = "glm", se = FALSE) +
+  #geom_jitter(aes(age, social, color = "Social"), width = .2, height = .2, alpha=.3) +
+  geom_smooth(aes(age, domain_social, color = "Social"), method = "glm", se = FALSE) +
+ # geom_jitter(aes(age, psych, color = "Psych"), width = .2, height = .2, alpha=.3) +
+  geom_smooth(aes(age, domain_psych, color = "Psych"), method = "glm", se = FALSE) +
+  #geom_jitter(aes(age, achieve, color = "Achieve"), width = .2, height = .2, alpha=.3) +
+  geom_smooth(aes(age, domain_achieve, color = "Achieve"), method = "glm", se = FALSE) +
+  #geom_jitter(aes(age, health, color = "Health"), width = .2, height = .2, alpha=.3) +
+  geom_smooth(aes(age, domain_health, color = "Health"), method = "glm", se = FALSE) +
+  theme_minimal() +
+  labs(title="Children's responses to intervention frequency questions by domain cluster", x = "Age", y = "Domain score", color = "Domain") +
+  theme(axis.text.x = element_text(angle = 01)) +
+  scale_color_manual(values = wes_palette("Royal2", n = 5), name = "Domain",
+                        limits = c("Achieve", "Social", "Nature", "Psych", "Health"))
+
+
+
+g_allinter <- g_allinter + ylim(1, 4)
+g_allinter
+ggsave("g_allinter.png", g_allinter, width = 4, height = 4, dpi = 300)
+
+```
+
+
+# All domains combined
+
+```{r}
+domain_age_mod <- lm(domain_score ~ age, data = d_domain)
+summary(domain_age_mod)
+
+domain_famrelig_mod <- lm(domain_score ~ fam_religiosity, data = d_domain)
+summary(domain_famrelig_mod)
+
+domain_pb_mod <- lm(domain_score ~ parent_beliefs + fam_religiosity, data = d_domain)
+summary(domain_pb_mod)
+
+domain_control_mod <- lm(domain_score ~ age + control_cat, data = d_domain)
+summary(domain_control_mod)
+
+tab_model(domain_age_mod, domain_famrelig_mod, domain_pb_mod, domain_control_mod,
+  show.est = TRUE,
+  show.ci = 0.95,
+  show.se = TRUE,
+  std.response = TRUE,
+  show.p = TRUE)
+
+```
+
+```{r}
+domain_famrelig_int_mod <- lm(domain_score ~ age*fam_religiosity, data = d_domain)
+summary(domain_famrelig_int_mod)
+
+domain_pb_int_model <- lm(domain_score ~ parent_beliefs*age + fam_religiosity, data = d_domain)
+summary(domain_pb_int_model)
+
+tab_model(domain_famrelig_int_mod, domain_pb_int_model, 
+  show.est = TRUE,
+  show.ci = 0.95,
+  show.se = TRUE,
+  std.response = TRUE,
+  show.p = TRUE)
+```
+
+# Nature domain
+```{r nature domain}
+
+nature_age_mod <- lm(domain_nature ~ age, data = d_domain)
+summary(nature_age_mod)
+
+nature_famrelig_mod <- lm(domain_nature ~ fam_religiosity, data = d_domain)
+summary(nature_famrelig_mod)
+
+nature_pb_mod <- lm(domain_nature ~ parent_beliefs + fam_religiosity, data = d_domain)
+summary(nature_pb_mod)
+
+nature_control_mod <- lm(domain_nature ~ age + control_cat, data = d_domain)
+summary(nature_control_mod)
+
+tab_model(nature_age_mod, nature_famrelig_mod, nature_pb_mod, nature_control_mod,
+  show.est = TRUE,
+  show.ci = 0.95,
+  show.se = TRUE,
+  std.response = TRUE,
+  show.p = TRUE)
+
+```
+
+```{r}
+
+nature_famrelig_int_mod <- lm(domain_nature ~ age*fam_religiosity, data = d_domain)
+summary(nature_famrelig_mod)
+
+nature_pb_int_model <- lm(domain_nature ~ parent_beliefs*age + fam_religiosity, data = d_domain)
+summary(nature_pb_int_model)
+
+tab_model(nature_famrelig_mod, nature_pb_int_model, 
+  show.est = TRUE,
+  show.ci = 0.95,
+  show.se = TRUE,
+  std.response = TRUE,
+  show.p = TRUE)
+```
+
+# Achievement domain
+```{r achievement domain}
+
+achieve_age_mod <- lm(domain_achieve ~ age, data = d_domain)
+summary(achieve_age_mod)
+
+achieve_famrelig_mod <- lm(domain_achieve ~ fam_religiosity, data = d_domain)
+summary(achieve_famrelig_mod)
+
+achieve_pb_mod <- lm(domain_achieve ~ parent_beliefs + fam_religiosity, data = d_domain)
+summary(achieve_pb_mod)
+
+achieve_control_mod <- lm(domain_achieve ~ age + control_cat, data = d_domain)
+summary(achieve_control_mod)
+
+tab_model(achieve_age_mod, achieve_famrelig_mod, achieve_pb_mod, achieve_control_mod,
+  show.est = TRUE,
+  show.ci = 0.95,
+  show.se = TRUE,
+  std.response = TRUE,
+  show.p = TRUE)
+```
+
+```{r}
+achieve_famrelig_int_model <- lm(domain_achieve ~ age*fam_religiosity, data = d_domain)
+summary(achieve_famrelig_int_model)
+
+achieve_pb_int_model <- lm(domain_achieve ~ parent_beliefs*age + fam_religiosity, data = d_domain)
+summary(achieve_pb_int_model)
+
+tab_model(achieve_famrelig_int_model, achieve_pb_int_model,
+  show.est = TRUE,
+  show.ci = 0.95,
+  show.se = TRUE,
+  std.response = TRUE,
+  show.p = TRUE)
+```
+
+# Social domain
+
+```{r social domain}
+
+social_age_mod <- lm(domain_social ~ age, data = d_domain)
+summary(social_age_mod)
+
+social_famrelig_mod <- lm(domain_social ~ fam_religiosity, data = d_domain)
+summary(social_famrelig_mod)
+
+social_pb_mod <- lm(domain_social ~ parent_beliefs + fam_religiosity, data = d_domain)
+summary(social_pb_mod)
+
+social_control_mod <- lm(domain_social ~ age + control_cat, data = d_domain)
+summary(social_control_mod)
+
+tab_model(social_age_mod, social_famrelig_mod, social_pb_mod, social_control_mod,
+  show.est = TRUE,
+  show.ci = 0.95,
+  show.se = TRUE,
+  std.response = TRUE,
+  show.p = TRUE)
+```
+
+```{r}
+social_famrelig_int_mod <- lm(domain_social ~ age*fam_religiosity, data = d_domain)
+summary(social_famrelig_int_mod)
+
+social_pb_int_mod <- lm(domain_social ~ parent_beliefs*age + fam_religiosity, data = d_domain)
+summary(social_pb_int_mod)
+
+tab_model(social_famrelig_int_mod, social_pb_int_mod,
+  show.est = TRUE,
+  show.ci = 0.95,
+  show.se = TRUE,
+  std.response = TRUE,
+  show.p = TRUE)
+```
+
+#Psych domain
+
+```{r psych domain}
+
+psych_age_mod <- lm(domain_psych ~ age, data = d_domain)
+summary(psych_age_mod)
+
+psych_famrelig_mod <- lm(domain_psych ~ fam_religiosity, data = d_domain)
+summary(psych_famrelig_mod)
+
+psych_pb_mod <- lm(domain_psych ~ parent_beliefs + fam_religiosity, data = d_domain)
+summary(psych_pb_mod)
+
+psych_control_mod <- lm(domain_psych ~ age + control_cat, data = d_domain)
+summary(psych_control_mod)
+
+tab_model(psych_age_mod, psych_famrelig_mod, psych_pb_mod, psych_control_mod, 
+  show.est = TRUE,
+  show.ci = 0.95,
+  show.se = TRUE,
+  std.response = TRUE,
+  show.p = TRUE)
+```
+
+```{r}
+psych_famrelig_mod <- lm(domain_psych ~ age*fam_religiosity, data = d_domain)
+summary(psych_famrelig_mod)
+
+psych_pb_int_mod <- lm(domain_psych ~ parent_beliefs*age + fam_religiosity, data = d_domain)
+summary(psych_pb_int_mod)
+
+tab_model(psych_famrelig_mod, psych_pb_int_mod,
+  show.est = TRUE,
+  show.ci = 0.95,
+  show.se = TRUE,
+  std.response = TRUE,
+  show.p = TRUE)
+```
+
+# Health domain
+
+```{r health domain}
+health_age_mod <- lm(domain_health ~ age, data = d_domain)
+summary(health_age_mod)
+
+health_famrelig_mod <- lm(domain_health ~ fam_religiosity, data = d_domain)
+summary(health_famrelig_mod)
+
+health_pb_mod <- lm(domain_health ~ parent_beliefs + fam_religiosity, data = d_domain)
+summary(health_pb_mod)
+
+health_control_mod <- lm(domain_health ~ age + control_cat, data = d_domain)
+summary(health_control_mod)
+
+tab_model(health_age_mod, health_famrelig_mod, health_pb_mod, health_control_mod,
+  show.est = TRUE,
+  show.ci = 0.95,
+  show.se = TRUE,
+  std.response = TRUE,
+  show.p = TRUE)
+```
+
+```{r}
+health_famrelig_int_mod <- lm(domain_health ~ age*fam_religiosity, data = d_domain)
+summary(health_famrelig_int_mod)
+
+health_pb_int_mod <- lm(domain_health ~ parent_beliefs*age + fam_religiosity, data = d_domain)
+summary(health_pb_int_mod)
+
+tab_model(health_famrelig_int_mod, health_pb_int_mod, 
+  show.est = TRUE,
+  show.ci = 0.95,
+  show.se = TRUE,
+  std.response = TRUE,
+  show.p = TRUE)
+```

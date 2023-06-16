@@ -1,0 +1,59 @@
+---
+title: "cielo correlations"
+author: "Hannah Lunkenheimer"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# loading packages
+library(sjPlot)
+library(apaTables)
+```
+```{r}
+# reading in data
+d_all <- read_csv("../data/data_clean/cielo_data.csv")
+
+```
+
+```{r}
+framing_corr <- d_all %>% dplyr::select("frame_can_make_happen_num", "frame_on_earth_num", "frame_peoples_lives_num", "frame_own_life_num")
+
+framing_corr <- na.omit(framing_corr)
+
+framing_corr <- framing_corr %>%
+  filter(frame_own_life_num != 0)
+
+head(framing_corr)
+
+tab_corr(framing_corr,
+         p.numeric = TRUE,
+         triangle = "lower")
+```
+
+```{r , echo=FALSE}
+influence_corr <- d_all %>% dplyr::select("intervention_parent_god_num", "tradition_importance_num", "tradition_attend_service_freq_num", "intervention_parent_own_life_num")
+
+influence_corr <- d_all %>% dplyr::select("parent_beliefs", "fam_religiosity")
+
+influence_corr <- na.omit(influence_corr)
+
+head(influence_corr)
+
+tab_corr(influence_corr,
+         p.numeric = TRUE,
+         triangle = "lower")
+```
+
+```{r , echo=FALSE}
+dv_corr <- d_all %>% dplyr::select("framework_score", "domain_score")
+dv_corr <- na.omit(dv_corr)
+
+head(dv_corr)
+
+tab_corr(dv_corr,
+         p.numeric = TRUE,
+         triangle = "lower")
+```
