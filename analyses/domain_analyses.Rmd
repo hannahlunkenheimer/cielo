@@ -10,6 +10,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(readr)
 library(tidyverse)
 library(ggsignif)
+library(sjPlot)
 
 ```
 
@@ -52,11 +53,11 @@ domainclusters <- ggplot(data = d_domain_long2, mapping = aes(x = variable, y = 
   theme_minimal() +
   scale_color_manual(values = wes_palette("Royal2", n = 5)) +
   theme(legend.position = "none") +
-  labs(title = "Intervention Domain Mean Scores", x = "Domain", y = "Intervention scores") + 
+  labs(title = "Intervention Domain Mean Scores", x = "Domain", y = "Frequency of God's Intervention") + 
   scale_x_discrete(labels=c("domain_achieve" = "Achievement", "domain_social" = "Social", "domain_nature" = "Nature", "domain_psych" = "Psychological", "domain_health" = "Health")) 
 
 domainclusters
-ggsave("../figs/domainclusters.png", domainclusters, width = 6, height = 6, dpi = 300)
+ggsave("domainclusters.png", domainclusters, width = , height = 6, dpi = 300)
 
 # Compute the analysis of variance
 anova1 <- aov(value ~ variable, data = d_domain_long2)
@@ -78,8 +79,8 @@ g_allinter <- ggplot(d_domain, aes(x = age, y = alldomains)) +
   #geom_jitter(aes(age, health, color = "Health"), width = .2, height = .2, alpha=.3) +
   geom_smooth(aes(age, domain_health, color = "Health"), method = "glm", se = FALSE) +
   theme_minimal() +
-  labs(title="Children's responses to intervention frequency questions by domain cluster", x = "Age", y = "Domain score", color = "Domain") +
-  theme(axis.text.x = element_text(angle = 01)) +
+  labs(title="Children's responses to intervention frequency questions by domain cluster", x = "Age", y = "Frequency of God’s intervention", color = "Domain") +
+  theme(axis.text.x = element_text(angle = 01), legend.position = "bottom") +
   scale_color_manual(values = wes_palette("Royal2", n = 5), name = "Domain",
                         limits = c("Achieve", "Social", "Nature", "Psych", "Health"))
 
@@ -87,7 +88,7 @@ g_allinter <- ggplot(d_domain, aes(x = age, y = alldomains)) +
 
 g_allinter <- g_allinter + ylim(1, 4)
 g_allinter
-ggsave("g_allinter.png", g_allinter, width = 4, height = 4, dpi = 300)
+ggsave("g_allinter.png", g_allinter, width = 5, height = 4, dpi = 300)
 
 ```
 
