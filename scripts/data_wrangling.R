@@ -59,6 +59,30 @@ d_all <- d_all %>%
     ))
   )
 
+# including write in responses to parent religion
+d_all <- d_all %>%
+  mutate(
+    relig_parent1 = if_else(relig_parent1 == "other", relig_parent1_other, relig_parent1),
+    relig_parent2 = if_else(relig_parent2 == "other", relig_parent2_other, relig_parent2)
+  )
+
+# recode parent religion 
+d_all <- d_all %>%
+  mutate(
+    across(c(relig_parent1, relig_parent2), ~ case_when(
+      . == "other christian (non-denominational)" | . == "jehovah's witness" ~ "other christian",
+      . == "other christian,atheist" | . == "athiest" | . == "jewish,atheist" | . == "catholic,athiest" | 
+        . == "protestant,athiest" | . == "jewish/athiest" | . == "other christian/atheist" | . == "jewish/atheist"| 
+        . == "other christian,athiest"
+      ~ "atheist",
+      . == "belief that all religions are of value" | . == "i believe in god" | . == "catholic/buddhist" ~ "other",
+      . == "protestant,other christian" ~ "protestant",
+      . == "raised catholic, currently non-practicing." ~ "none",
+      . == "catholic/other christian" ~ "catholic",
+      TRUE ~ .
+    ))
+  )
+
 # attending service
 d_all <- d_all %>%
   mutate(
@@ -324,10 +348,10 @@ d_all <- d_all %>%
 # creating new variables ----
 
 # framework intervention task score
-d_all$frame_can_make_happen_num <- dplyr::recode(d_all$frame_can_make_happen, 'no' = 1, 'yes' = 2, 'idk' = 0)
-d_all$frame_on_earth_num <- dplyr::recode(d_all$frame_on_earth, 'no' = 1, 'yes' = 2, 'idk' = 0)
-d_all$frame_peoples_lives_num <- dplyr::recode(d_all$frame_peoples_lives, 'no' = 1, 'yes' = 2, 'idk' = 0)
-d_all$frame_own_life_num <- dplyr::recode(d_all$frame_own_life, 'no' = 1, 'yes' = 2, 'idk' = 0)
+d_all$frame_can_make_happen_num <- dplyr::recode(d_all$frame_can_make_happen, 'no' = 0, 'yes' = 1, 'idk' = 3)
+d_all$frame_on_earth_num <- dplyr::recode(d_all$frame_on_earth, 'no' = 0, 'yes' = 1, 'idk' = 3)
+d_all$frame_peoples_lives_num <- dplyr::recode(d_all$frame_peoples_lives, 'no' = 0, 'yes' = 1, 'idk' = 3)
+d_all$frame_own_life_num <- dplyr::recode(d_all$frame_own_life, 'no' = 0, 'yes' = 1, 'idk' = 3)
 d_all <- d_all %>%
   rowwise() %>%
   mutate(
@@ -335,9 +359,9 @@ d_all <- d_all %>%
   )
 
 # nature domain
-d_all$domain_nature_plants_num <- dplyr::recode(d_all$domain_nature_plants, 'never' = 1, 'only at special times' = 2, 'pretty often' = 3, 'always' = 4)
-d_all$domain_nature_seasons_num <- dplyr::recode(d_all$domain_nature_seasons, 'never' = 1, 'only at special times' = 2, 'pretty often' = 3, 'always' = 4)
-d_all$domain_nature_sun_num <- dplyr::recode(d_all$domain_nature_sun, 'never' = 1, 'only at special times' = 2, 'pretty often' = 3, 'always' = 4)
+d_all$domain_nature_plants_num <- dplyr::recode(d_all$domain_nature_plants, 'never' = 0, 'only at special times' = 1, 'pretty often' = 2, 'always' = 3)
+d_all$domain_nature_seasons_num <- dplyr::recode(d_all$domain_nature_seasons, 'never' = 0, 'only at special times' = 1, 'pretty often' = 2, 'always' = 3)
+d_all$domain_nature_sun_num <- dplyr::recode(d_all$domain_nature_sun, 'never' = 0, 'only at special times' = 1, 'pretty often' = 2, 'always' = 3)
 d_all <- d_all %>%
   rowwise() %>%
   mutate(
@@ -345,10 +369,10 @@ d_all <- d_all %>%
   )
 
 # psych domain
-d_all$domain_psych_brave_num <- dplyr::recode(d_all$domain_psych_brave, 'never' = 1, 'only at special times' = 2, 'pretty often' = 3, 'always' = 4)
-d_all$domain_psych_decisions_num <- dplyr::recode(d_all$domain_psych_decisions, 'never' = 1, 'only at special times' = 2, 'pretty often' = 3, 'always' = 4)
-d_all$domain_psych_dreams_num <- dplyr::recode(d_all$domain_psych_dreams, 'never' = 1, 'only at special times' = 2, 'pretty often' = 3, 'always' = 4)
-d_all$domain_psych_happier_num <- dplyr::recode(d_all$domain_psych_happier, 'never' = 1, 'only at special times' = 2, 'pretty often' = 3, 'always' = 4)
+d_all$domain_psych_brave_num <- dplyr::recode(d_all$domain_psych_brave, 'never' = 0, 'only at special times' = 1, 'pretty often' = 2, 'always' = 3)
+d_all$domain_psych_decisions_num <- dplyr::recode(d_all$domain_psych_decisions, 'never' = 0, 'only at special times' = 1, 'pretty often' = 2, 'always' = 3)
+d_all$domain_psych_dreams_num <- dplyr::recode(d_all$domain_psych_dreams, 'never' = 0, 'only at special times' = 1, 'pretty often' = 2, 'always' = 3)
+d_all$domain_psych_happier_num <- dplyr::recode(d_all$domain_psych_happier, 'never' = 0, 'only at special times' = 1, 'pretty often' = 2, 'always' = 3)
 d_all <- d_all %>%
   rowwise() %>%
   mutate(
@@ -356,8 +380,8 @@ d_all <- d_all %>%
   )
 
 # social domain
-d_all$domain_social_friends_num <- dplyr::recode(d_all$domain_social_friends, 'never' = 1, 'only at special times' = 2, 'pretty often' = 3, 'always' = 4)
-d_all$domain_social_love_num <- dplyr::recode(d_all$domain_social_love, 'never' = 1, 'only at special times' = 2, 'pretty often' = 3, 'always' = 4)
+d_all$domain_social_friends_num <- dplyr::recode(d_all$domain_social_friends, 'never' = 0, 'only at special times' = 1, 'pretty often' = 2, 'always' = 3)
+d_all$domain_social_love_num <- dplyr::recode(d_all$domain_social_love, 'never' = 0, 'only at special times' = 1, 'pretty often' = 2, 'always' = 3)
 d_all <- d_all %>%
   rowwise() %>%
   mutate(
@@ -365,9 +389,9 @@ d_all <- d_all %>%
   )
 
 # achieve domain
-d_all$domain_achieve_find_num <- dplyr::recode(d_all$domain_achieve_find, 'never' = 1, 'only at special times' = 2, 'pretty often' = 3, 'always' = 4)
-d_all$domain_achieve_school_num <- dplyr::recode(d_all$domain_achieve_school, 'never' = 1, 'only at special times' = 2, 'pretty often' = 3, 'always' = 4)
-d_all$domain_achieve_sports_num <- dplyr::recode(d_all$domain_achieve_sports, 'never' = 1, 'only at special times' = 2, 'pretty often' = 3, 'always' = 4)
+d_all$domain_achieve_find_num <- dplyr::recode(d_all$domain_achieve_find, 'never' = 0, 'only at special times' = 1, 'pretty often' = 2, 'always' = 3)
+d_all$domain_achieve_school_num <- dplyr::recode(d_all$domain_achieve_school, 'never' = 0, 'only at special times' = 1, 'pretty often' = 2, 'always' = 3)
+d_all$domain_achieve_sports_num <- dplyr::recode(d_all$domain_achieve_sports, 'never' = 0, 'only at special times' = 1, 'pretty often' = 2, 'always' = 3)
 d_all <- d_all %>%
   rowwise() %>%
   mutate(
@@ -375,8 +399,8 @@ d_all <- d_all %>%
   )
 
 # health domain
-d_all$domain_health_safe_num <- dplyr::recode(d_all$domain_health_safe, 'never' = 1, 'only at special times' = 2, 'pretty often' = 3, 'always' = 4)
-d_all$domain_health_sick_num <- dplyr::recode(d_all$domain_health_sick, 'never' = 1, 'only at special times' = 2, 'pretty often' = 3, 'always' = 4)
+d_all$domain_health_safe_num <- dplyr::recode(d_all$domain_health_safe, 'never' = 0, 'only at special times' = 1, 'pretty often' = 2, 'always' = 3)
+d_all$domain_health_sick_num <- dplyr::recode(d_all$domain_health_sick, 'never' = 0, 'only at special times' = 1, 'pretty often' = 2, 'always' = 3)
 d_all <- d_all %>%
   rowwise() %>%
   mutate(
@@ -391,40 +415,53 @@ d_all <- d_all %>%
   )
 
 # family religiosity
-d_all$tradition_attend_service_freq_num <- dplyr::recode(d_all$tradition_attend_service_freq, 'never' = 1, 'less than once a year' = 2, 'a few times a year' = 3, 'a few times a month' = 4,
-                                                         'a few times a week' = 5, 'daily' = 6)
-d_all$tradition_importance_num <- dplyr::recode(d_all$tradition_importance, 'not at all important' = 1, 'minimally important' = 2, 'moderately important' = 3, 'very important' = 4)
+d_all$tradition_attend_service_freq_num <- dplyr::recode(d_all$tradition_attend_service_freq, 
+                                                         'never' = 0, 
+                                                         'less than once a year' = .2, 
+                                                         'a few times a year' = .4, 
+                                                         'a few times a month' = .6,
+                                                         'a few times a week' = .8, 
+                                                         'daily' = 1)
+d_all$tradition_importance_num <- dplyr::recode(d_all$tradition_importance, 
+                                                'not at all important' = 0, 
+                                                'minimally important' = .33, 
+                                                'moderately important' = .66, 
+                                                'very important' = 1)
+
+# create proportion score for family religiosity
 d_all <- d_all %>%
   rowwise() %>%
   mutate(
-    fam_religiosity = mean(c(tradition_attend_service_freq_num, tradition_importance_num))
-  )
+    fam_religiosity = (tradition_attend_service_freq_num + tradition_importance_num) / 2)
 
 # parent religious beliefs
 d_all$intervention_parent_god_num <- dplyr::recode(d_all$intervention_parent_god, 
-                                                   'i do not believe in god.' = 1, 
-                                                   'a non-interventionist god; one who does not attempt to influence events in human life.' = 2, 
-                                                   'a god who used to intervene in historical or biblical times, but is not particularly involved in the workings of modern life.' = 3, 
-                                                   'an interventionist god; one who is sometimes involved in the workings of modern life.' = 4,
-                                                   'an interventionist god; one who is intimately involved in the workings of modern life.' = 5)
+                                                   'i do not believe in god.' = 0, 
+                                                   'a non-interventionist god; one who does not attempt to influence events in human life.' = .25, 
+                                                   'a god who used to intervene in historical or biblical times, but is not particularly involved in the workings of modern life.' = .5, 
+                                                   'an interventionist god; one who is sometimes involved in the workings of modern life.' = .75,
+                                                   'an interventionist god; one who is intimately involved in the workings of modern life.' = 1)
 d_all$intervention_parent_own_life_num <- dplyr::recode(d_all$intervention_parent_own_life, 
-                                                   'absolutely not' = 1, 
-                                                   'probably not' = 2, 
-                                                   'unsure' = 0, 
-                                                   'probably yes' = 3,
-                                                   'absolutely yes' = 4)
+                                                   'absolutely not' = 0, 
+                                                   'probably not' = .25, 
+                                                   'unsure' = .5, 
+                                                   'probably yes' = .75,
+                                                   'absolutely yes' = 1)
 d_all <- d_all %>%
   rowwise() %>%
   mutate(
-    parent_beliefs = mean(c(intervention_parent_god_num, intervention_parent_own_life_num))
+    parent_beliefs = (intervention_parent_god_num + intervention_parent_own_life_num) / 2
   )
 
 # family influence (family religiosity and parent belief)
 d_all <- d_all %>%
   rowwise() %>%
   mutate(
-    fam_influence = mean(c(intervention_parent_god_num, intervention_parent_own_life_num, tradition_attend_service_freq_num, tradition_importance_num))
-  )
+    fam_influence = (parent_beliefs + fam_religiosity) / 2) 
+
+d_all <- d_all %>%
+  mutate_at(vars(contains("_num"), parent_beliefs, fam_religiosity), as.numeric)
 
 # exporting clean names data to csv
 write.csv(d_all, file='../cielo/data/data_clean/cielo_data.csv', row.names=FALSE)
+

@@ -9,11 +9,30 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 library(psych)
 library(irr)
-library(readr)
+library(tidyverse)
+library(readxl)
 library(reshape2)
 
-d_paola <- readr::read_csv("~/Documents/GitHub/cielo/data/paolacoding_irr_cielo copy.csv")
-d_helen <- readr::read_csv("~/Documents/GitHub/cielo/data/helencoding_irr_cielo copy.csv")
+paola <- read_excel("../data/data_archive/paola_cielomanuscript.xlsx")
+
+paola <- paola %>%
+  slice(4:98) %>%
+  mutate_all(as.numeric)
+
+helen <- read_excel("../data/data_archive/helen_cielomanuscript.xlsx")
+
+helen <- helen %>%
+  slice(4:98) %>%
+  mutate_all(as.numeric)
+
+paola_stacked <- gather(paola, key = "variable_name", value = "value", -1)
+helen_stacked <- gather(helen, key = "variable_name", value = "value", -1)
+
+kappa_result <- kappa2(paola_stacked$value, helen_stacked$value, weight = "unweighted")
+```
+
+```{r checking paola's creation}
+
 
 ```
 

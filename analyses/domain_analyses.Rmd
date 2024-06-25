@@ -17,6 +17,10 @@ library(sjPlot)
 ```{r cars}
 # reading in clean data
 d_all <- read_csv("../data/data_clean/cielo_data.csv")
+
+summary(d_all$age)
+sd(d_all$age)
+
 ```
 ```{r, echo=FALSE}
 # selecting all of the columns that we need for our framework analysis
@@ -24,6 +28,14 @@ library(wesanderson)
 library(extrafont)
 
 d_domain <- d_all %>% dplyr::select("age", "gender", "fam_influence", "fam_religiosity", "parent_beliefs", contains(c("pid", "domain", "control")))
+
+d_domain3 <- d_all %>% 
+  select("pid", "domain_nature_seasons_num", "domain_nature_plants_num", "domain_nature_sun_num", "domain_psych_brave_num", "domain_psych_decisions_num", "domain_psych_dreams_num", "domain_psych_happier_num", "domain_social_friends_num", 
+         "domain_social_love_num", "domain_achieve_find_num", "domain_achieve_school_num",
+         "domain_achieve_sports_num", "domain_health_safe_num", "domain_health_sick_num")
+
+d_domain_long3 <- d_domain3 %>%
+  pivot_longer(cols = -pid, names_to = "variable", values_to = "value")
 
 d_domain2 <- d_all %>% dplyr::select("domain_nature", "domain_social", "domain_achieve",
                                      "domain_health", "domain_psych", "pid") 
@@ -51,18 +63,33 @@ domainclusters <- ggplot(data = d_domain_long2, mapping = aes(x = variable, y = 
   geom_signif(comparisons = list(c("domain_social", "domain_nature")), y_position =5.25,
               map_signif_level=TRUE) +
   theme_minimal() +
-  scale_color_manual(values = wes_palette("Royal2", n = 5)) +
+  scale_color_manual(values = c("#190937", "#E0462A", "#60CAD6", "#2A0C7A", "#DA7E68")) +
   theme(legend.position = "none") +
   labs(title = "Intervention Domain Mean Scores", x = "Domain", y = "Frequency of God's Intervention") + 
   scale_x_discrete(labels=c("domain_achieve" = "Achievement", "domain_social" = "Social", "domain_nature" = "Nature", "domain_psych" = "Psychological", "domain_health" = "Health")) 
 
 domainclusters
-ggsave("domainclusters.png", domainclusters, width = , height = 6, dpi = 300)
+ggsave("domainclusters.png", domainclusters, width = 8, height = 4, dpi = 300)
+
+domainclusters2 <- ggplot(data = d_domain_long2, mapping = aes(x = variable, y = value, color = variable)) + 
+  geom_violin() + 
+  stat_summary(fun.y = mean, geom = "errorbar", aes(ymax = ..y.., ymin = ..y..),
+                 width = .7 , size = 1, linetype = "solid") +
+  geom_jitter(width = .2, height = .2, alpha=.3) +
+  theme_minimal() +
+  scale_color_manual(values = c("#190937", "#E0462A", "#60CAD6", "#2A0C7A", "#DA7E68")) +
+  theme(legend.position = "none") +
+  labs(title = "Intervention Domain Mean Scores", x = "Domain", y = "Frequency of God's Intervention") + 
+  scale_x_discrete(labels=c("domain_achieve" = "Achievement", "domain_social" = "Social", "domain_nature" = "Nature", "domain_psych" = "Psychological", "domain_health" = "Health")) 
+
+domainclusters2
+ggsave("domainclusters2.png", domainclusters2, width = 8, height = 4, dpi = 300)
 
 # Compute the analysis of variance
 anova1 <- aov(value ~ variable, data = d_domain_long2)
 # Summary of the analysis
 summary(anova1)
+tab_model(anova1)
 TukeyHSD(anova1)
 ```
 
@@ -81,14 +108,14 @@ g_allinter <- ggplot(d_domain, aes(x = age, y = alldomains)) +
   theme_minimal() +
   labs(title="Children's responses to intervention frequency questions by domain cluster", x = "Age", y = "Frequency of God’s intervention", color = "Domain") +
   theme(axis.text.x = element_text(angle = 01), legend.position = "bottom") +
-  scale_color_manual(values = wes_palette("Royal2", n = 5), name = "Domain",
+  scale_color_manual(values = c("#190937", "#E0462A", "#60CAD6", "#2A0C7A", "#DA7E68"), name = "Domain",
                         limits = c("Achieve", "Social", "Nature", "Psych", "Health"))
 
 
 
 g_allinter <- g_allinter + ylim(1, 4)
 g_allinter
-ggsave("g_allinter.png", g_allinter, width = 5, height = 4, dpi = 300)
+ggsave("g_allinter.png", g_allinter, width = 8, height = 4, dpi = 300)
 
 ```
 
@@ -324,4 +351,44 @@ tab_model(health_famrelig_int_mod, health_pb_int_mod,
   show.se = TRUE,
   std.response = TRUE,
   show.p = TRUE)
+```
+
+```{r domain cluster by question}
+# here, i'm making a dataframe with frequency counts added in
+d_intervention_reshaped_counts <- table(d_domain_long3$value, d_domain_long3$variable)
+addmargins(d_intervention_reshaped_counts)
+round(prop.table(d_intervention_reshaped_counts,2)*100,digits=0)
+df_irc <- as.data.frame(d_intervention_reshaped_counts)
+
+#Turn your 'treatment' column into a character vector
+df_irc$Var2 <- as.character(df_irc$Var2)
+#Then turn it back into a factor with the levels in the correct order
+df_irc$Var2 <- factor(df_irc$Var2, levels=c("domain_achieve_find_num", "domain_achieve_school_num",
+         "domain_achieve_sports_num", "domain_social_friends_num", 
+         "domain_social_love_num", "domain_nature_seasons_num", "domain_nature_plants_num", 
+         "domain_nature_sun_num", "domain_psych_brave_num", "domain_psych_decisions_num", "domain_psych_dreams_num",
+         "domain_psych_happier_num",   "domain_health_safe_num", "domain_health_sick_num"))
+
+# creating our ggplot for all exist questions including both genders together. i'm labeling it p_exist because we're making a plot for the exist questions
+g_irc <- ggplot(data = df_irc, aes(x = Var2, y = Freq, fill = Var1)) +
+      scale_fill_manual(values = c("#E0462A", "#60CAD6", "#2A0C7A", "#DA7E68"), 
+                                    labels=c("1" = "Never", "2" = "Only on special occasions", "3" = "Pretty often", "4" = "Always", "5" = "I don't know")) +
+       geom_bar(stat = "identity", width = .5) +
+      theme_minimal() +
+      labs(title="Children's responses to intervention frequency questions", x = "Domain item", y = "Counts", fill = "Response") +
+      theme(axis.text.x = element_text(angle=01))
+
+#g_irc <- g_irc + scale_fill_discrete(labels=c("1" = "Never", "2" = "Only on special occasions", "3" = "Pretty #often", "4" = "Always", "5" = "I don't know"))
+g_irc <- g_irc + theme(legend.position="top")
+
+
+# changing the label names
+g_irc <- g_irc + scale_x_discrete(labels=c("domain_health_sick_num" = "Sick\npeople", "domain_nature_sun_num" = "Sun\nrise", "domain_nature_seasons_num" = "Seasons\nchange", "domain_nature_plants_num" = "Plants\ngrow", "domain_social_love_num" = "Fall\nin love", "domain_psych_dreams_num" = "Good\ndreams", "domain_achieve_find_num" = "Find\nthings", "domain_psych_decisions_num" = "Hard\ndecisions", "domain_achieve_school_num" = "Good\nat job", "domain_achieve_sports_num" = "Good\nat sports", "domain_psych_happier_num" = "Feel\nhappy", "domain_psych_brave_num" = "Feel\nbrave", "domain_health_safe_num" = "Safe\nfrom danger", "domain_social_friends_num"= "Become\nfriends")) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 7))
+
+
+
+g_irc
+ggsave("g_irc.png", g_irc, width = 8, height = 4, dpi = 300)
+
 ```
