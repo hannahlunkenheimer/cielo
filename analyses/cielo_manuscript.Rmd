@@ -11,11 +11,10 @@ knitr::opts_chunk$set(dev = "png",
                       echo = FALSE,
                       cache = TRUE)
 
-packages <- c("moonBook", "dplyr", "readr", "ggplot2", "sjPlot", "apaTables", "lme4", "car", "DHARMa", "janitor", "reshape2", "ggsignif", "stats", "stringr", "ggpubr", "tidyr", "lsmeans", "daggity", "ggdag") 
+packages <- c("moonBook", "dplyr", "readr", "ggplot2", "sjPlot", "apaTables", "lme4", "car", "DHARMa", "janitor", "reshape2", "ggsignif", "stats", "stringr", "ggpubr", "tidyr", "lsmeans", "daggity", "ggdag", "lsr") 
 
 lapply(packages, require, character.only = TRUE)
 ```
-
 
 ```{r}
 # load data
@@ -57,7 +56,7 @@ parent_edu_bach <- d_all %>%
 
 ```
 
-#### Fig: Parent Religion Heatmap
+Fig: Parent Religion Heatmap
 
 ```{r}
 # make crosstab with parent religion
@@ -67,8 +66,8 @@ cross_tab <- table(d_all$relig_parent1, d_all$relig_parent2)
 cross_tab_tidy <- as.data.frame.table(cross_tab)
 
 # plot crosstab
-relig_map <- ggplot(cross_tab_tidy_filtered, aes(x = Var1, y = Var2, size = Freq)) +
-  geom_point(color = "#33a12c", shape = 21, fill = "#33a12c") +  # Fill points with green color
+relig_map <- ggplot(cross_tab_tidy, aes(x = Var1, y = Var2, size = Freq)) +
+  geom_point(color = "#33a12c", shape = 21, fill = "#33a12c") +  
   scale_size_continuous(range = c(3, 10)) +
   geom_text(data = . %>% filter(Freq > 0), aes(label = Freq), color = "white", size = 3) +
   theme_minimal() +
@@ -85,48 +84,7 @@ ggsave("../figs/relig_map.png", relig_map, width = 6, height = 4, dpi = 300)
 
 # Results
 
-# DAG
-
-```{r}
-
-dag <- dagitty("dag {
-  Fam_religiosity -> Child_intervention_beliefs
-  Fam_religiosity -> Parent_intervention_beliefs
-  Parent_intervention_beliefs -> Child_intervention_beliefs
-  Age -> Control
-  Age -> Child_intervention_beliefs
-  Control -> Child_intervention_beliefs
-}")
-
-plot(dag)
-
-interventiondag <- dagify(
-  interview ~ famreligiosity + parentbelief + age + control,
-  parentbelief ~ famreligiosity,
-  control ~ age,
-  labels = c(
-    "interview" = "Child\n intervention\n beliefs",
-    "famreligiosity" = "Family\n religiosity",
-    "parentbelief" = "Parent\n intervention\n beliefs",
-    "age" = "Age",
-    "control" = "Perceived\n control"
-  ),
-  exposure = "parentbelief",
-  outcome = "interview"
-)
-
-ggdag(interventiondag, text = FALSE, use_labels = "label") +
-  theme_void() + 
-  geom_dag_text(nudge_x = 1, nudge_y = 1) +
-  geom_dag_edges_link(
-        arrow = grid::arrow(length = grid::unit(10, "pt"), type = "closed"),
-        position = "identity",
-        inherit.aes = TRUE,
-  )
-
-```
-
-## Perceived control
+Perceived control
 
 ```{r control}
 
@@ -145,7 +103,7 @@ control_table <- table(bin_control)
 chisq.test(control_table)
 
 ```
-## Family Influence
+Family Influence
 
 ```{r}
 
@@ -167,7 +125,7 @@ d_all %>%
 
 ```
 
-## Correlations
+Correlations
 
 ```{r general intervention framing}
 
@@ -187,7 +145,7 @@ tab_corr(d_framingcorr,
 
 ```
 
-```{r correlatioin parent beliefs and fam religiosity}
+```{r correlation parent beliefs and fam religiosity}
 
 d_religcorr <- d_all %>% 
   select(tradition_attend_service_freq_num, tradition_importance_num, intervention_parent_god_num, intervention_parent_own_life_num)
@@ -215,7 +173,7 @@ tab_corr(d_interventioncorr,
 
 ```
 
-# Focal questions
+## Focal questions
 
 ```{r intervention framing model age}
 #creating dataframe for intervention framing 
@@ -225,8 +183,6 @@ d_framing <- d_all %>%
          pid, control_cat, school, gender, fam_religiosity, 
          parent_beliefs, fam_influence, control, framework_score)
 ```
-
-## Focal question ANOVA
 
 ```{r}
 d_personal <- d_all %>% 
@@ -248,6 +204,7 @@ d_personal_long <- filtered_data_noidk %>%
 # run ANOVA to test for differences
 anova_personal <- aov(value ~ name, data = d_personal_long)
 summary(anova_personal)
+etaSquared(anova_personal)
 TukeyHSD(anova_personal)
 ```
 
@@ -560,7 +517,6 @@ tab_model(reg_domain2, reg_domain_nature2, reg_domain_social2, reg_domain_psych2
 
 ```
 
-# Domains
 
 ## All domains combined
 
@@ -767,7 +723,7 @@ domain_bar <- domain_bar %>%
                                "plants" = "Plants", "love" = "Love", "friends" = "Friends",
                               "decisions" = "Decisions", "brave" = "Brave", "happier" = "Happier",
                               "sick" = "Sick", "safe" = "Safe", "sports" = "Sports", "find" = "Find",
-                              "dreams" = "Dreams")) +
+                              "dreams" = "Dreams", "school" = "School")) +
   guides(fill = guide_legend(reverse = TRUE, title = NULL)) + 
   facet_grid(~category, scales = "free_x") 
 
@@ -838,7 +794,7 @@ domain_clusters <- d_domain_long %>%
 
 domain_clusters
 
-ggsave("../figs/domainclusters.png", domain_clusters, width = 6, height = 4, dpi = 300)
+ggsave("../figs/domainclusters.png", domain_clusters, width = 5, height = 4, dpi = 300)
 
 # Compute the analysis of variance
 #anova1 <- aov(value ~ variable, data = d_domain_long)
@@ -897,7 +853,7 @@ ggsave("../figs/g_allinter.png", g_allinter, width = 6, height = 4, dpi = 300)
 # geom_smooth(aes(age, alldomains, color = "Total"), method = "glm", se = FALSE) +
 ```
 
-# Child choice question
+## Child choice question
 
 ```{r child choice}
 d_concepts <- d_all %>%
